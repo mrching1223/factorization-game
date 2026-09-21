@@ -1,406 +1,1942 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="鋼之鍊金術：因式分解的等價交換——國家鍊金術師考核遊戲" />
-  <title>鋼之鍊金術：因式分解的等價交換</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { theme: { extend: { colors: { coal:'#11100e', iron:'#252725', brass:'#c9a45c', ember:'#f2b64a', parchment:'#e9e0cb', ink:'#17140f', moss:'#798c64' }, boxShadow: { metal:'0 18px 45px rgba(0,0,0,.42)', glow:'0 0 35px rgba(242,182,74,.28)' } } } };
-  </script>
-  <script>
-    window.MathJax = {
-      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']], packages: {'[+]': ['ams']} },
-      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] },
-      startup: { typeset: false }
-    };
-  </script>
-  <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-  <style>
-    :root { --brass:#c9a45c; --ember:#f2b64a; --coal:#11100e; --iron:#252725; --parchment:#e9e0cb; --line:rgba(221,190,125,.34); --ease:cubic-bezier(.23,1,.32,1); }
-    * { box-sizing:border-box; }
-    html { background:#e5d8b9; }
-    body { min-height:100vh; margin:0; color:var(--parchment); font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:linear-gradient(rgba(249,244,228,.84),rgba(224,207,165,.9)),url('/manus-storage/alchemy-silhouette_7d7d444e.png') center 76%/cover fixed; }
-    body::before { content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.11; background:url('/manus-storage/alchemy-silhouette_7d7d444e.png') center 76%/cover fixed; mix-blend-mode:multiply; }
-    main { position:relative; z-index:1; }
-    button, select, input { font:inherit; }
-    button { cursor:pointer; }
-    button:focus-visible, select:focus-visible, input:focus-visible { outline:3px solid var(--ember); outline-offset:3px; }
-    .display { font-family: Georgia, "Times New Roman", serif; letter-spacing:.04em; }
-    .metal-panel { border:1px solid var(--line); background:linear-gradient(145deg, rgba(48,48,43,.9), rgba(21,20,18,.92)); box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 15px 35px rgba(0,0,0,.32); }
-    .metal-rim { border:1px solid rgba(231,205,143,.55); box-shadow:inset 0 0 0 2px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.65); }
-    .alchemy-circle { position:relative; isolation:isolate; overflow:hidden; }
-    .alchemy-circle::before { content:""; position:absolute; inset:-42%; z-index:-1; opacity:.28; background:repeating-radial-gradient(circle, transparent 0 29px, rgba(234,204,133,.55) 30px 31px, transparent 32px 59px), conic-gradient(from 20deg, transparent 0 8%, rgba(244,195,80,.28) 8% 9%, transparent 9% 16%, rgba(244,195,80,.28) 16% 17%, transparent 17% 25%, rgba(244,195,80,.28) 25% 26%, transparent 26%); transform:rotate(12deg); }
-    .soft-button { border:1px solid rgba(222,191,124,.46); background:linear-gradient(180deg, rgba(77,74,66,.9),rgba(40,39,35,.94)); color:#f1e7cf; transition:transform 160ms var(--ease), border-color 160ms var(--ease), background 160ms var(--ease), box-shadow 160ms var(--ease); }
-    .soft-button:hover { transform:translateY(-2px); border-color:var(--ember); background:linear-gradient(180deg,#77705d,#3d3a32); box-shadow:0 9px 18px rgba(0,0,0,.26); }
-    .soft-button:active { transform:scale(.97); }
-    .ember-button { color:#1b150a; border:1px solid #f9d687; background:linear-gradient(180deg,#f9d88c,#c98932); box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 8px 19px rgba(0,0,0,.35); transition:transform 160ms var(--ease), filter 160ms var(--ease); }
-    .ember-button:hover { filter:brightness(1.1); transform:translateY(-2px); }
-    .ember-button:active { transform:scale(.97); }
-    .status-card { min-width:0; border-left:1px solid rgba(221,190,125,.24); }
-    .status-card:first-child { border-left:0; }
-    .progress-track { height:10px; overflow:hidden; border:1px solid rgba(243,211,140,.35); border-radius:999px; background:#171611; box-shadow:inset 0 2px 4px rgba(0,0,0,.6); }
-    .progress-fill { height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#a76825,#f7dc85,#fff3ba); box-shadow:0 0 14px rgba(242,182,74,.75); transition:width 500ms var(--ease); }
-    .alchemy-map { position:relative; min-height:28rem; overflow:hidden; isolation:isolate; border:1px solid rgba(224,191,116,.42); border-radius:1rem; padding:3.25rem 2.5rem; background:radial-gradient(circle at 50% 43%,rgba(247,207,113,.17),transparent 17%),radial-gradient(circle at 15% 16%,rgba(234,201,126,.1),transparent 24%),linear-gradient(145deg,rgba(72,55,33,.8),rgba(31,29,23,.96) 58%,rgba(15,15,13,.99)); box-shadow:inset 0 0 0 4px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,246,210,.14); }
-    .alchemy-map::before { content:"NATIONAL ALCHEMIST ROUTE"; position:absolute; top:1rem; left:50%; z-index:-1; transform:translateX(-50%); color:rgba(250,221,151,.45); font-size:.62rem; font-weight:900; letter-spacing:.23em; white-space:nowrap; }
-    .alchemy-map::after { content:""; position:absolute; inset:1.5rem; z-index:-1; border:1px solid rgba(240,208,133,.23); border-radius:.75rem; opacity:.8; background:linear-gradient(90deg,transparent 49.8%,rgba(240,208,133,.24) 50%,transparent 50.2%),linear-gradient(transparent 49.8%,rgba(240,208,133,.24) 50%,transparent 50.2%),radial-gradient(circle at 50% 50%,transparent 0 46px,rgba(240,208,133,.3) 47px 48px,transparent 49px); }
-    .map-route-lines { position:absolute; inset:1.7rem; z-index:0; width:calc(100% - 3.4rem); height:calc(100% - 3.4rem); pointer-events:none; opacity:.78; }
-    .map-nodes { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.5rem 4.5rem; }
-    .map-gate { position:absolute; top:50%; left:50%; z-index:0; display:grid; width:4.35rem; height:4.35rem; place-items:center; transform:translate(-50%,-50%); border:1px solid rgba(248,215,142,.72); border-radius:50%; color:#ffe6a1; background:radial-gradient(circle,#5c4a2c,#211e17 63%); box-shadow:0 0 0 5px rgba(0,0,0,.15),0 0 28px rgba(242,182,74,.22); font-size:1.55rem; }
-    .map-node { position:relative; min-height:9.75rem; overflow:hidden; text-align:left; border:1px solid rgba(231,202,134,.52); background:linear-gradient(145deg,rgba(65,63,53,.95),rgba(27,26,22,.96)); color:#efe4cd; box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 22px rgba(0,0,0,.28); transition:transform 220ms var(--ease),border-color 220ms var(--ease),box-shadow 220ms var(--ease),background 220ms var(--ease); }
-    .map-node::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 88% 14%, rgba(243,183,69,.24), transparent 30%); pointer-events:none; }
-    .map-node:hover { transform:translateY(-5px); border-color:var(--ember); background:linear-gradient(145deg,rgba(86,79,59,.98),rgba(32,30,23,.98)); box-shadow:0 14px 26px rgba(0,0,0,.35),0 0 24px rgba(242,182,74,.15); }
-    .map-node.is-selected { border-color:#ffe6a1; background:linear-gradient(145deg,rgba(105,84,45,.94),rgba(34,31,23,.97)); box-shadow:0 0 0 2px rgba(242,182,74,.35),0 0 28px rgba(242,182,74,.23); }
-    .seal { display:grid; place-items:center; width:3.5rem; height:3.5rem; border:2px solid var(--brass); border-radius:50%; color:var(--ember); background:radial-gradient(circle,rgba(232,194,97,.22),transparent 60%); box-shadow:inset 0 0 0 4px rgba(0,0,0,.26); font-size:1.45rem; }
-    .game-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
-    .card-scene { min-width:0; aspect-ratio:1/.8; perspective:1000px; }
-    .math-card { position:relative; display:block; width:100%; aspect-ratio:1/.8; border:0; padding:0; background:transparent; -webkit-tap-highlight-color:transparent; perspective:1000px; -webkit-perspective:1000px; }
-    .card-inner { position:relative; display:block; width:100%; height:100%; transform-style:preserve-3d; -webkit-transform-style:preserve-3d; transition:transform 620ms cubic-bezier(.2,.76,.25,1); will-change:transform; }
-    .math-card.is-flipped .card-inner, .math-card.is-matched .card-inner { transform:rotateY(180deg); }
-    .card-face { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:1rem; backface-visibility:hidden; -webkit-backface-visibility:hidden; -webkit-transform:translateZ(0); transform:translateZ(0); will-change:transform,opacity; }
-    .card-front { flex-direction:column; gap:.55rem; color:#f2dec1; border:1px solid rgba(231,202,134,.55); background:linear-gradient(145deg,#4a4b44,#1b1b19); box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 5px rgba(0,0,0,.15), 0 10px 18px rgba(0,0,0,.34); transform:rotateY(0deg) translateZ(1px); -webkit-transform:rotateY(0deg) translateZ(1px); transition:opacity 0s linear 320ms,visibility 0s linear 320ms; }
-    .card-front::before { content:""; position:absolute; width:118%; aspect-ratio:1; border:1px solid rgba(240,198,102,.5); border-radius:50%; background:repeating-radial-gradient(circle, transparent 0 12px, rgba(240,198,102,.22) 13px 14px, transparent 15px 24px); opacity:.72; }
-    .card-front > * { position:relative; z-index:1; }
-    .card-symbol { display:grid; place-items:center; width:62%; aspect-ratio:1; border:1px solid rgba(248,218,142,.66); border-radius:50%; background:radial-gradient(circle,rgba(255,247,211,.13),rgba(56,38,20,.2) 65%,transparent 70%); box-shadow:inset 0 0 0 5px rgba(0,0,0,.12),0 0 20px rgba(242,182,74,.16); }
-    .card-sigil { display:block; width:90%; height:90%; object-fit:contain; filter:brightness(1.45) contrast(1.2) drop-shadow(0 0 8px rgba(249,219,141,.52)); animation:sigil-breathe 5s ease-in-out infinite; }
-    .emblem-image { display:block; width:76%; height:76%; object-fit:contain; filter:invert(83%) sepia(38%) saturate(648%) hue-rotate(352deg) brightness(101%) contrast(91%) drop-shadow(0 1px 1px rgba(255,255,255,.38)); }
-    .card-front-label { font-size:.58rem; font-weight:800; letter-spacing:.17em; color:#d3c0a0; }
-    .card-back { flex-direction:column; padding:.65rem; color:#211b13; border:2px solid #d8b66f; background:radial-gradient(circle at 85% 12%,rgba(255,251,220,.9),transparent 30%),linear-gradient(145deg,#f3ead4,#cfc2a5); transform:rotateY(180deg) translateZ(1px); -webkit-transform:rotateY(180deg) translateZ(1px); box-shadow:inset 0 0 0 4px rgba(91,66,30,.11),0 10px 18px rgba(0,0,0,.35); opacity:0; visibility:hidden; transition:opacity 0s linear 320ms,visibility 0s linear 320ms; }
-    .card-back::before { content:""; position:absolute; inset:6px; border:1px solid rgba(104,74,29,.42); border-radius:.65rem; pointer-events:none; }
-    .math-card.is-matched .card-back { border-color:#ffe49a; background:radial-gradient(circle at center,rgba(255,249,190,.96),rgba(238,183,68,.86) 56%,#9a5e20); box-shadow:0 0 0 3px rgba(244,198,83,.38),0 0 28px rgba(244,195,80,.75); }
-    .math-card.is-flipped .card-front, .math-card.is-matched .card-front { opacity:0; visibility:hidden; }
-    .math-card.is-flipped .card-back, .math-card.is-matched .card-back { opacity:1; visibility:visible; }
-    .math-card.is-locked .card-front { filter:brightness(.56) saturate(.58); }
-    .math-card.is-locked .card-symbol, .math-card.is-locked .card-front-label { opacity:.2; }
-    .card-lock { position:absolute; z-index:3; display:none; width:2.25rem; height:2.25rem; place-items:center; border:1px solid rgba(250,218,136,.65); border-radius:50%; color:#ffdfa0; background:rgba(18,17,14,.72); box-shadow:0 0 0 4px rgba(0,0,0,.17); font-size:1rem; }
-    .math-card.is-locked .card-lock { display:grid; }
-    .card-badge { position:absolute; top:.42rem; left:.46rem; z-index:2; display:grid; place-items:center; width:1.35rem; height:1.35rem; border:1px solid rgba(91,66,30,.5); border-radius:50%; color:#5a3d16; background:rgba(255,249,224,.82); font-size:.62rem; font-weight:900; }
-    .formula { position:relative; z-index:1; display:flex; width:100%; min-width:0; align-items:center; justify-content:center; padding:1.25rem .15rem .4rem; text-align:center; font-size:clamp(.8rem,2.1vw,1.12rem); line-height:1.15; }
-    .formula mjx-container { max-width:100%; min-width:0; margin:0!important; overflow:visible; }
-    .card-check { position:absolute; right:.43rem; bottom:.38rem; z-index:2; display:none; width:1.35rem; height:1.35rem; place-items:center; border-radius:50%; color:#2d2414; background:#fff1ad; font-size:.8rem; font-weight:900; }
-    .math-card.is-matched .card-check { display:grid; }
-    .mentor { position:fixed; right:1rem; bottom:1rem; z-index:30; width:min(22rem,calc(100vw - 2rem)); border:1px solid rgba(245,211,139,.58); border-radius:1rem; background:linear-gradient(145deg,rgba(43,41,36,.97),rgba(16,15,13,.97)); box-shadow:0 18px 44px rgba(0,0,0,.48); transform:translateY(0); transition:transform 230ms var(--ease), opacity 230ms var(--ease); }
-    .mentor.is-collapsed { transform:translateY(calc(100% - 3.7rem)); }
-    .mentor-orb { display:grid; place-items:center; width:2.6rem; height:2.6rem; border:1px solid #efd080; border-radius:50%; color:#fff1b2; background:radial-gradient(circle at 38% 33%,#fff8c7,#e2a63d 42%,#59391b 78%); box-shadow:0 0 18px rgba(242,182,74,.7); }
-    .modal { opacity:0; pointer-events:none; transition:opacity 250ms var(--ease); }
-    .modal > div { transform:translateY(10px) scale(.97); transition:transform 280ms var(--ease); }
-    .modal.is-open { opacity:1; pointer-events:auto; }
-    .modal.is-open > div { transform:translateY(0) scale(1); }
-    .badge-card { border:1px solid rgba(221,190,125,.35); background:rgba(31,30,27,.82); }
-    .badge-card.is-earned { border-color:#f4c65e; background:linear-gradient(145deg,rgba(107,78,32,.72),rgba(43,38,28,.95)); box-shadow:0 0 18px rgba(242,182,74,.16); }
-    .skill-row .skill-fill { height:.5rem; width:0; border-radius:999px; background:linear-gradient(90deg,#96692d,#f4c65e,#fff2b2); transition:width 750ms var(--ease); }
-    .toast-stack { position:fixed; top:1rem; right:1rem; z-index:60; display:grid; gap:.6rem; width:min(23rem,calc(100vw - 2rem)); }
-    .toast { display:flex; gap:.7rem; align-items:start; border:1px solid #f2cf7e; border-radius:.8rem; padding:.8rem; color:#251a0a; background:linear-gradient(135deg,#fff1b8,#d99539); box-shadow:0 13px 28px rgba(0,0,0,.34); animation:toast-in 350ms var(--ease) both; }
-    .ring-pulse { animation:circle-pulse 720ms var(--ease); }
-    .story-banner { position:relative; overflow:hidden; border:1px solid rgba(226,192,119,.32); background:linear-gradient(90deg,rgba(24,22,18,.95),rgba(55,40,27,.84),rgba(20,19,17,.96)); box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.25); }
-    .story-banner::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(15,14,12,.7),transparent 32%,transparent 67%,rgba(15,14,12,.78)); }
-    .story-portrait { position:relative; z-index:1; height:100%; width:100%; object-fit:cover; filter:saturate(.92) contrast(1.06) brightness(.82); mix-blend-mode:screen; opacity:.82; }
-    .story-medallion { display:grid; place-items:center; width:3rem; height:3rem; flex:0 0 auto; border:1px solid rgba(245,211,139,.65); border-radius:50%; background:radial-gradient(circle at 38% 33%,#fff6c8,#d49a37 46%,#51351a 80%); color:#2c1e0d; font-size:1.25rem; box-shadow:0 0 18px rgba(242,182,74,.45); }
-    .bank-indicator { display:inline-flex; align-items:center; gap:.45rem; border:1px solid rgba(239,204,128,.36); border-radius:999px; padding:.34rem .65rem; background:rgba(0,0,0,.26); color:#f8dea0; font-size:.68rem; font-weight:800; letter-spacing:.1em; }
-    .map-character { width:5.5rem; height:5.5rem; border:1px solid rgba(239,204,128,.5); border-radius:999px; object-fit:cover; object-position:43% 32%; box-shadow:0 0 0 4px rgba(0,0,0,.2),0 0 25px rgba(242,182,74,.2); }
-    .certificate-character { width:5.25rem; height:5.25rem; border:1px solid rgba(245,211,139,.55); border-radius:50%; object-fit:cover; object-position:53% 42%; box-shadow:0 0 0 4px rgba(0,0,0,.16); }
-    .character-stage { position:relative; min-height:12.5rem; overflow:hidden; border:1px solid rgba(231,202,134,.42); background:linear-gradient(110deg,rgba(22,20,16,.98) 0%,rgba(36,27,19,.92) 47%,rgba(14,14,13,.84) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 28px rgba(0,0,0,.24); }
-    .character-stage::before { content:""; position:absolute; inset:-68% 30% -55% -25%; opacity:.5; background:repeating-radial-gradient(circle,transparent 0 25px,rgba(246,196,78,.32) 26px 27px,transparent 28px 51px); animation:circle-drift 18s linear infinite; }
-    .character-stage::after { content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(18,17,14,.78),transparent 54%,rgba(11,11,10,.38)); }
-    .character-copy { position:relative; z-index:2; max-width:52%; padding:1.35rem; }
-    .character-action { position:absolute; right:0; bottom:0; z-index:1; width:58%; height:100%; object-fit:cover; object-position:center 44%; filter:saturate(1.08) contrast(1.06); opacity:.86; transform:scale(1.03); animation:character-breathe 4.2s ease-in-out infinite; }
-    .character-cast { position:absolute; right:1rem; bottom:.6rem; z-index:3; width:8.3rem; height:3.8rem; object-fit:cover; border:1px solid rgba(242,204,126,.45); border-radius:.7rem; box-shadow:0 8px 18px rgba(0,0,0,.42); animation:portrait-float 3.4s ease-in-out infinite; }
-    .stage-orb { position:absolute; z-index:4; right:8.8rem; bottom:1.2rem; display:grid; width:2.6rem; height:2.6rem; place-items:center; border:1px solid #f7d383; border-radius:50%; color:#fff2bb; background:radial-gradient(circle at 35% 30%,#fff7c0,#e2a337 44%,#5c3618 82%); box-shadow:0 0 0 5px rgba(0,0,0,.16),0 0 25px rgba(242,182,74,.6); animation:orb-pulse 1.9s ease-in-out infinite; }
-    .compact-protocol { display:flex; align-items:center; gap:.7rem; min-height:4rem; border:1px solid rgba(231,202,134,.24); border-radius:.9rem; background:rgba(0,0,0,.17); padding:.7rem .85rem; }
-    .compact-protocol .seal { flex:0 0 auto; }
-    .map-view { position:relative; width:min(100%,31rem); aspect-ratio:945/1065; height:auto; margin-inline:auto; overflow:hidden; border:1px solid rgba(225,190,112,.75); border-radius:1rem; background:#151510; box-shadow:inset 0 0 0 4px rgba(0,0,0,.2),0 18px 38px rgba(0,0,0,.38); }
-    .atlas-reference { position:absolute; z-index:0; top:0; left:0; width:100%; height:auto; transform:translateY(-15%); pointer-events:none; user-select:none; }
-    .map-view::before { content:""; position:absolute; z-index:1; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(8,8,6,.08),transparent 18%,transparent 78%,rgba(8,8,6,.18)); }
-    .map-view::after { content:""; position:absolute; z-index:1; inset:.6rem; border:1px solid rgba(255,226,149,.35); border-radius:.7rem; pointer-events:none; }
-    .map-node { position:absolute; z-index:3; display:grid; width:2.35rem; height:2.35rem; min-height:0; place-items:center; border:1px solid #f6cd6e; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff4bb,#c98229 45%,#26180f 77%)!important; color:#211508; box-shadow:0 0 0 3px rgba(27,18,10,.44),0 0 14px rgba(255,202,91,.68); transition:transform 200ms var(--ease),filter 200ms var(--ease),box-shadow 200ms var(--ease); }
-    .map-node:hover { transform:scale(1.14); filter:brightness(1.12); }
-    .map-node.is-selected { box-shadow:0 0 0 4px rgba(255,239,174,.5),0 0 22px rgba(255,202,91,.9); animation:map-sigil-pulse 1.7s ease-in-out infinite; }
-    .map-node .map-node-intro { display:none!important; }
-    .map-node > span:first-child { display:block!important; padding:0!important; border:0!important; background:none!important; box-shadow:none!important; }
-    .map-node > .map-node-glyph { display:grid!important; }
-    .map-node .seal { display:none!important; }
-    .map-node strong, .map-node span:first-child > span:last-child { display:none!important; }
-    .map-node-sigil { display:block; width:84%; height:84%; object-fit:contain; filter:drop-shadow(0 0 5px rgba(255,245,203,.8)); }
-    .zone-badge-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.55rem; }
-    .zone-badge { min-width:0; border:1px solid rgba(221,190,125,.28); border-radius:.8rem; padding:.6rem .35rem; text-align:center; background:rgba(0,0,0,.18); color:#a8a093; }
-    .zone-badge.is-earned { border-color:#f0ca70; background:linear-gradient(145deg,rgba(136,95,31,.65),rgba(48,37,23,.92)); color:#f9e6af; box-shadow:0 0 16px rgba(242,182,74,.2); }
-    .zone-badge img { width:2.25rem; height:2.25rem; margin:0 auto .35rem; object-fit:contain; filter:grayscale(1) brightness(1.8); opacity:.45; }
-    .zone-badge.is-earned img { filter:drop-shadow(0 0 7px rgba(255,211,108,.62)); opacity:1; }
-    .certificate-sigil { width:4.3rem; height:4.3rem; object-fit:contain; filter:drop-shadow(0 2px 5px rgba(255,215,119,.5)); }
-    .certificate-document { position:relative; isolation:isolate; overflow:hidden; border:8px double #84652f; background:radial-gradient(circle at 16% 20%,rgba(255,255,255,.78),transparent 25%),radial-gradient(circle at 85% 80%,rgba(221,190,114,.25),transparent 26%),repeating-linear-gradient(0deg,rgba(91,64,24,.026) 0 1px,transparent 1px 5px),#f7f0df; color:#281f12; box-shadow:0 22px 58px rgba(0,0,0,.48); }
-    .certificate-document::before { content:""; position:absolute; z-index:-1; inset:13px; border:1px solid rgba(120,89,34,.65); pointer-events:none; }
-    .certificate-document::after { content:""; position:absolute; z-index:-1; width:24rem; height:24rem; right:-7rem; top:5rem; border:2px solid rgba(133,98,36,.1); border-radius:50%; background:repeating-radial-gradient(circle,transparent 0 19px,rgba(133,98,36,.06) 20px 21px,transparent 22px 38px); transform:rotate(19deg); pointer-events:none; }
-    .certificate-banner { position:relative; overflow:hidden; padding:1.8rem 1.5rem 1.25rem; color:#fff0c6; background:linear-gradient(112deg,#211a10,#68461d 52%,#20180f); text-align:center; }
-    .certificate-banner::after { content:""; position:absolute; inset:0; opacity:.42; background:linear-gradient(90deg,transparent,rgba(249,213,135,.36),transparent); transform:skewX(-24deg) translateX(-40%); }
-    .certificate-kicker { position:relative; z-index:1; font-size:.64rem; font-weight:900; letter-spacing:.27em; color:#f7cf72; }
-    .certificate-title { position:relative; z-index:1; margin:.4rem 0 0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.8rem,5vw,3rem); font-weight:900; letter-spacing:.12em; }
-    .certificate-subtitle { position:relative; z-index:1; margin:.55rem 0 0; font-family:Georgia,"Times New Roman",serif; font-size:.8rem; letter-spacing:.17em; color:#e9d4a3; }
-    .certificate-emblem-row { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; gap:1rem; margin:-1.45rem 0 0; }
-    .certificate-emblem { display:grid; width:5.4rem; height:5.4rem; place-items:center; border:5px solid #f6e0a4; border-radius:50%; background:radial-gradient(circle,#fff4ca,#dca746 55%,#53361a); box-shadow:0 0 0 2px #71551f,0 8px 18px rgba(40,24,8,.35); }
-    .certificate-emblem .certificate-sigil { width:4.2rem; height:4.2rem; filter:drop-shadow(0 1px 3px rgba(41,20,4,.56)); }
-    .certificate-emblem-text { max-width:11rem; color:#64451c; font-size:.67rem; font-weight:900; letter-spacing:.11em; line-height:1.45; }
-    .certificate-body { padding:1.55rem 1.5rem 1.7rem; text-align:center; }
-    .certificate-statement { max-width:38rem; margin:0 auto; font-family:Georgia,"Times New Roman",serif; font-size:1.1rem; line-height:1.9; }
-    .certificate-name { margin:.4rem 0 .7rem; color:#68451b; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.9rem,5vw,3.1rem); font-weight:900; letter-spacing:.1em; }
-    .certificate-course { display:inline-block; border-bottom:1px solid #9b7536; padding:0 .3rem .2rem; color:#6d4d1f; font-size:.84rem; font-weight:900; letter-spacing:.08em; }
-    .certificate-ledger { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; margin:1.45rem auto 1.1rem; max-width:42rem; text-align:left; }
-    .certificate-ledger div { min-width:0; border:1px solid rgba(122,88,33,.45); border-radius:.45rem; padding:.7rem .75rem; background:rgba(255,252,240,.6); }
-    .certificate-ledger dt { font-size:.63rem; font-weight:900; letter-spacing:.12em; color:#866635; }
-    .certificate-ledger dd { margin:.2rem 0 0; font-size:1rem; font-weight:900; color:#312312; }
-    .certificate-verdict { max-width:42rem; margin:1.2rem auto 0; border-top:1px solid rgba(123,91,39,.45); border-bottom:1px solid rgba(123,91,39,.45); padding:1rem .4rem; color:#514021; font-family:Georgia,"Times New Roman",serif; font-size:.96rem; line-height:1.65; }
-    .certificate-signatures { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2.5rem; max-width:38rem; margin:1.55rem auto 0; }
-    .certificate-signature { border-top:1px solid #735426; padding-top:.42rem; color:#705126; font-size:.68rem; font-weight:900; letter-spacing:.1em; }
-    .certificate-meta { margin-top:1rem; color:#80643a; font-size:.62rem; font-weight:800; letter-spacing:.08em; }
-    .map-node[data-zone="A"] { left:35.5%; top:49%; }.map-node[data-zone="B"] { left:70%; top:27%; }.map-node[data-zone="C"] { left:12%; top:27%; }.map-node[data-zone="D"] { left:67%; top:76%; }
-    .map-view .map-nodes { position:absolute; z-index:2; inset:0; display:block; }
-    .mission-brief { display:flex; gap:.8rem; align-items:flex-start; border:1px solid rgba(232,200,125,.28); border-radius:.85rem; padding:.8rem .9rem; background:linear-gradient(90deg,rgba(91,65,29,.28),rgba(0,0,0,.16)); }
-    .mission-brief-icon { display:grid; width:2rem; height:2rem; flex:0 0 auto; place-items:center; border:1px solid rgba(245,211,139,.55); border-radius:50%; color:#ffdf92; background:rgba(26,21,14,.62); }
-    @keyframes map-sigil-pulse { 50% { transform:scale(1.12); filter:brightness(1.2); } }
-    @keyframes sigil-breathe { 50% { transform:scale(1.06) rotate(3deg); filter:brightness(1.6) contrast(1.24) drop-shadow(0 0 13px rgba(249,219,141,.78)); } }
-    .header-compact { min-height:0; }
-    .header-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
-    .header-stats .status-card { padding:.7rem .8rem; }
-    .header-stats .status-card p:first-child { font-size:.59rem; }
-    .header-stats .status-card p:nth-child(2) { margin-top:.25rem; font-size:1rem; }
-    .header-stats .status-card p:last-child { margin-top:.1rem; font-size:.65rem; }
-    @keyframes toast-in { from { opacity:0; transform:translateY(-12px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
-    @keyframes circle-pulse { 0% { box-shadow:0 0 0 0 rgba(244,195,80,.7),0 0 0 0 rgba(244,195,80,.4); } 55% { box-shadow:0 0 0 10px rgba(244,195,80,0),0 0 42px 8px rgba(244,195,80,.52); } 100% { box-shadow:0 0 0 0 rgba(244,195,80,0),0 0 0 0 rgba(244,195,80,0); } }
-    @keyframes circle-drift { to { transform:rotate(360deg); } } @keyframes character-breathe { 50% { transform:scale(1.08) translateX(-.6rem); } } @keyframes portrait-float { 50% { transform:translateY(-.35rem) rotate(-1deg); } } @keyframes orb-pulse { 50% { transform:scale(1.1); box-shadow:0 0 0 7px rgba(0,0,0,.12),0 0 34px rgba(242,182,74,.9); } }
-    @media (max-width:639px) { .game-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:.68rem!important; } .card-scene, .math-card { aspect-ratio:1/.87; } .card-front { gap:.5rem; } .card-symbol { width:58%; } .card-front-label { font-size:.56rem; letter-spacing:.13em; } .formula { font-size:clamp(.9rem,4.05vw,1.12rem); padding:1.7rem .16rem .42rem; } .card-back { padding:.55rem .28rem; } .card-badge { top:.38rem; left:.38rem; width:1.28rem; height:1.28rem; font-size:.58rem; } .card-check { right:.36rem; bottom:.34rem; width:1.28rem; height:1.28rem; font-size:.7rem; } .card-lock { width:2rem; height:2rem; font-size:.8rem; } .mentor { right:.75rem; bottom:.75rem; width:calc(100vw - 1.5rem); max-height:7rem; overflow-y:auto; } .mentor.is-collapsed { width:3.6rem; height:3.6rem; max-height:none; transform:none; overflow:hidden; border-radius:50%; } .mentor.is-collapsed > div { padding:.5rem; } .mentor.is-collapsed > div > div { display:none; } .mentor .p-3 { padding:.75rem; } .mentor #mentorText { font-size:.82rem; line-height:1.38; } .character-stage { min-height:10rem; } .character-copy { max-width:64%; padding:1rem; } .character-copy h2 { font-size:1.35rem!important; } .character-copy p { font-size:.78rem!important; line-height:1.35!important; } .character-action { width:56%; opacity:.68; } .character-cast { width:5.8rem; height:2.8rem; right:.55rem; bottom:.45rem; } .stage-orb { right:6.4rem; bottom:.7rem; width:2rem; height:2rem; font-size:.8rem; } .map-view { width:100%; height:auto; aspect-ratio:945/1065; } .map-node { width:2rem; height:2rem; }.map-node[data-zone="A"] { left:35.5%; top:49%; }.map-node[data-zone="B"] { left:70%; top:27%; }.map-node[data-zone="C"] { left:12%; top:27%; }.map-node[data-zone="D"] { left:67%; top:76%; } .zone-badge-grid { gap:.35rem; }.zone-badge { padding:.45rem .2rem; font-size:.56rem; } .header-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .header-stats .status-card { padding:.5rem .65rem; } .header-stats .status-card:nth-child(3) { border-left:0; border-top:1px solid rgba(221,190,125,.18); } .header-stats .status-card:nth-child(4) { border-top:1px solid rgba(221,190,125,.18); } .certificate-document { border-width:5px; } .certificate-banner { padding:1.35rem .8rem .95rem; } .certificate-emblem-row { gap:.6rem; margin-top:-1.1rem; } .certificate-emblem { width:4.5rem; height:4.5rem; } .certificate-emblem .certificate-sigil { width:3.45rem; height:3.45rem; } .certificate-emblem-text { font-size:.56rem; } .certificate-body { padding:1.2rem .9rem 1.3rem; } .certificate-ledger { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.45rem; } .certificate-ledger div { padding:.55rem; } .certificate-ledger dd { font-size:.82rem; overflow-wrap:anywhere; } .certificate-signatures { gap:1rem; } }
-    @media print { @page { size:A4 portrait; margin:12mm; } body { background:#fff!important; color:#1b1710!important; } body > main, .mentor, .toast-stack, #mapModal, #methodModal, #badgeModal, #confirmModal, #startButton, #mapButton, #badgeButton, #resetButton, #printButton, #reportClose, #certificateActions { display:none!important; } #reportModal { position:static!important; display:block!important; opacity:1!important; pointer-events:auto!important; background:#fff!important; padding:0!important; } #reportModal > div { max-width:none!important; transform:none!important; box-shadow:none!important; } .certificate-document { min-height:0!important; border-width:7px!important; box-shadow:none!important; } .certificate-banner { padding-top:1.15rem!important; padding-bottom:.9rem!important; } .certificate-body { padding:1rem 1.25rem!important; } }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>鋼之鍊金術：因式分解的等價交換</title>
+<meta name="description" content="Alchemy of Factorization — Equivalent Exchange：因式分解配對鍊成遊戲">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)'], ['$', '$']] },
+    chtml: { scale: 1 }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+/* =====================================================================
+   鋼之鍊金術：因式分解的等價交換 — Stylesheet
+   ===================================================================== */
+:root {
+  --ink: #1b1a17;
+  --panel: #25231e;
+  --panel-soft: #343128;
+  --parchment: #f4ecd9;
+  --parchment-soft: #fbf6e9;
+  --brass: #c79a45;
+  --gold: #f2c45f;
+  --amber: #f4b64a;
+  --cream: #f7e7bd;
+  --muted: #b7aa92;
+  --danger: #d56e5a;
+  --success: #7fae6a;
+  --font-display: 'Cinzel', 'Noto Serif TC', 'PMingLiU', serif;
+  --font-serif: 'Noto Serif TC', 'PMingLiU', serif;
+  --font-body: 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  src: local('Cinzel');
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(199,154,69,0.10), transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(199,154,69,0.08), transparent 40%),
+    var(--parchment);
+  background-attachment: fixed;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  /* parchment watermark / silhouette fallback drawn purely in CSS */
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0, transparent 130px, var(--ink) 131px, var(--ink) 133px, transparent 134px),
+    radial-gradient(circle at 50% 50%, transparent 0, transparent 170px, var(--ink) 171px, var(--ink) 172px, transparent 173px),
+    repeating-conic-gradient(from 0deg, var(--ink) 0deg 1deg, transparent 1deg 15deg);
+  background-position: 80% 20%, 80% 20%, 80% 20%;
+  background-repeat: no-repeat;
+  background-size: 340px 340px, 340px 340px, 340px 340px;
+}
+
+#appRoot { position: relative; z-index: 1; }
+
+img.asset-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+img.asset-img.asset-broken { display: none; }
+
+.sigil-fallback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(242,196,95,0.16), transparent 60%),
+    repeating-conic-gradient(from 0deg, rgba(242,196,95,0.55) 0deg 2deg, transparent 2deg 30deg),
+    radial-gradient(circle, #201e19 55%, #100f0c 100%);
+  border: 2px solid var(--brass);
+  box-shadow: inset 0 0 14px rgba(0,0,0,0.6), 0 0 10px rgba(242,196,95,0.25);
+}
+.sigil-fallback::before, .sigil-fallback::after {
+  content: "";
+  position: absolute;
+  border: 1px solid rgba(242,196,95,0.65);
+  border-radius: 50%;
+}
+.sigil-fallback::before { inset: 14%; }
+.sigil-fallback::after { inset: 30%; transform: rotate(45deg); border-style: dashed; }
+
+.scene-fallback, .map-fallback, .badge-hero-fallback, .cert-seal-fallback, .cert-texture-fallback {
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(160deg, rgba(199,154,69,0.35), transparent 55%),
+    repeating-linear-gradient(115deg, rgba(0,0,0,0.12) 0 2px, transparent 2px 26px),
+    radial-gradient(circle at 30% 30%, rgba(242,196,95,0.25), transparent 55%),
+    linear-gradient(135deg, #2b271e, #17140f 70%);
+  position: relative;
+}
+.scene-fallback::after {
+  content: "⚗";
+  position: absolute;
+  right: 8%;
+  bottom: 6%;
+  font-size: 3.4rem;
+  color: rgba(242,196,95,0.35);
+}
+.map-fallback {
+  background:
+    radial-gradient(circle at 20% 25%, rgba(242,196,95,0.18), transparent 40%),
+    radial-gradient(circle at 75% 30%, rgba(242,196,95,0.14), transparent 38%),
+    radial-gradient(circle at 30% 75%, rgba(242,196,95,0.14), transparent 38%),
+    radial-gradient(circle at 78% 78%, rgba(242,196,95,0.16), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(199,154,69,0.06) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, rgba(199,154,69,0.06) 0 1px, transparent 1px 26px),
+    linear-gradient(180deg, #efe3c4, #ddc998 60%, #cbb377);
+}
+.badge-hero-fallback::before, .cert-texture-fallback::before {
+  content: "";
+}
+.cert-seal-fallback {
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, var(--brass) 0deg 3deg, #8c6a2c 3deg 30deg),
+    radial-gradient(circle, #d8ae55, #8c6a2c 80%);
+  border: 3px solid #6d4f1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  color: #3a2a0f;
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.7rem;
+}
+
+a { color: inherit; }
+
+/* ---------- Header ---------- */
+.top-panel {
+  margin: 12px auto 0;
+  max-width: 1180px;
+  background: linear-gradient(160deg, var(--panel-soft), var(--panel) 60%, #17150f);
+  border: 2px solid var(--brass);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 40px rgba(0,0,0,0.4);
+  padding: 16px 20px;
+  color: var(--cream);
+}
+.top-panel .eyebrow {
+  font-family: var(--font-display);
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  color: var(--amber);
+  text-transform: uppercase;
+}
+.top-panel h1 {
+  font-family: var(--font-display);
+  margin: 4px 0 6px;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+.top-panel .student-line {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-bottom: 12px;
+}
+.top-panel .student-line strong { color: var(--cream); }
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.btn {
+  font-family: var(--font-body);
+  border: 1px solid var(--brass);
+  background: linear-gradient(160deg, #3a3626, #23211a);
+  color: var(--cream);
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(242,196,95,0.25); background: linear-gradient(160deg, #464130, #2a271e); }
+.btn:active { transform: translateY(0); }
+.btn-gold {
+  background: linear-gradient(160deg, var(--gold), var(--brass));
+  color: #2a1f08;
+  font-weight: 700;
+  border-color: #8c6a2c;
+}
+.btn-gold:hover { box-shadow: 0 4px 16px rgba(242,196,95,0.45); }
+.btn-ghost { background: transparent; }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.status-cell {
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(199,154,69,0.4);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.status-cell .label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.status-cell .value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--gold);
+  margin-top: 2px;
+}
+.status-cell .sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.progress-track {
+  margin-top: 6px;
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.4);
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brass), var(--gold));
+  box-shadow: 0 0 10px rgba(242,196,95,0.6);
+  width: 0%;
+  transition: width .5s ease;
+}
+
+/* ---------- Mission stage ---------- */
+.mission-stage {
+  max-width: 1180px;
+  margin: 14px auto 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--brass);
+  position: relative;
+  min-height: 128px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  background: #1c1a14;
+}
+.mission-text {
+  padding: 18px 20px;
+  color: var(--cream);
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.mission-text .tag {
+  font-family: var(--font-display);
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+  color: var(--amber);
+}
+.mission-text h2 { margin: 2px 0; font-family: var(--font-display); color: var(--gold); font-size: 1.3rem; }
+.mission-text p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.mission-text .zone-line { margin-top: 6px; font-size: 0.85rem; color: var(--cream); }
+.mission-art {
+  position: relative;
+  min-height: 128px;
+}
+.mission-orb {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold), var(--brass) 70%, transparent 100%);
+  box-shadow: 0 0 18px 6px rgba(242,196,95,0.55);
+  animation: orb-pulse 2.4s ease-in-out infinite;
+  z-index: 3;
+}
+@keyframes orb-pulse { 0%,100% { opacity: .7; transform: scale(1);} 50% { opacity: 1; transform: scale(1.18);} }
+
+@media (max-width: 719px) {
+  .mission-stage { grid-template-columns: 1fr; }
+  .mission-art { min-height: 90px; }
+}
+
+/* ---------- Game board ---------- */
+.board-panel {
+  max-width: 1180px;
+  margin: 14px auto 0;
+  background: linear-gradient(170deg, var(--panel-soft), var(--panel));
+  border: 2px solid var(--brass);
+  border-radius: 16px;
+  padding: 18px 20px 22px;
+  color: var(--cream);
+}
+.board-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.board-head h3 { font-family: var(--font-display); color: var(--gold); margin: 0; font-size: 1.15rem; }
+.wave-tag {
+  font-size: 0.72rem;
+  color: var(--ink);
+  background: var(--amber);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.board-sub { color: var(--muted); font-size: 0.84rem; margin: 4px 0 16px; line-height: 1.5; }
+.board-sub .rule { display: block; }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 719px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+}
+
+.card-scene { perspective: 1000px; aspect-ratio: 3 / 4; }
+.math-card {
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  cursor: pointer;
+  position: relative;
+}
+.math-card.is-locked { cursor: not-allowed; }
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 620ms cubic-bezier(.2,.76,.25,1);
+  will-change: transform;
+}
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform, opacity;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.card-front {
+  transform: rotateY(0deg) translateZ(1px);
+  -webkit-transform: rotateY(0deg) translateZ(1px);
+  transition: opacity 0s linear 320ms, visibility 0s linear 320ms;
+  background: radial-gradient(circle at 50% 30%, #3a3626, #17150f 78%);
+  border: 2px solid var(--brass);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.65);
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+.card-back {
+  transform: rotateY(180deg) translateZ(1px);
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0s linear 320ms, visibility 0s linear 320ms;
+  background: linear-gradient(160deg, var(--parchment-soft), var(--parchment));
+  border: 2px solid var(--brass);
+  color: var(--ink);
+  flex-direction: column;
+  padding: 10px;
+}
+.math-card.is-flipped .card-inner,
+.math-card.is-matched .card-inner { transform: rotateY(180deg); }
+.math-card.is-flipped .card-front,
+.math-card.is-matched .card-front { opacity: 0; visibility: hidden; }
+.math-card.is-flipped .card-back,
+.math-card.is-matched .card-back { opacity: 1; visibility: visible; }
+
+.card-sigil-wrap {
+  width: 58%;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  animation: sigil-breathe 3.2s ease-in-out infinite;
+}
+@keyframes sigil-breathe {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(242,196,95,0.25)); }
+  50% { filter: drop-shadow(0 0 10px rgba(242,196,95,0.55)); }
+}
+.card-front .transmute-label {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--amber);
+}
+.math-card.is-locked .card-front { filter: grayscale(0.7) brightness(0.55); }
+.lock-icon {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.card-kind-tag {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  color: var(--brass);
+  border: 1px solid var(--brass);
+  border-radius: 6px;
+  padding: 1px 6px;
+  align-self: flex-start;
+  background: rgba(199,154,69,0.08);
+}
+.card-formula {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(0.85rem, 2.1vw, 1.05rem);
+  padding: 4px 2px;
+  word-break: break-word;
+}
+.math-card.is-matched .card-back {
+  background: linear-gradient(160deg, #fdf0c8, var(--gold));
+  border-color: #8c6a2c;
+  box-shadow: 0 0 22px rgba(242,196,95,0.55);
+}
+.card-check {
+  display: none;
+  text-align: center;
+  color: #4b7c3a;
+  font-size: 0.78rem;
+  margin-top: 4px;
+  font-weight: 700;
+}
+.math-card.is-matched .card-check { display: block; }
+
+@media (max-width: 719px) {
+  .card-formula { font-size: 0.92rem; }
+}
+
+/* ---------- toast / mentor ---------- */
+.toast-stack {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+}
+.toast {
+  background: linear-gradient(160deg, var(--panel-soft), var(--panel));
+  border: 1px solid var(--gold);
+  color: var(--cream);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.4), 0 0 18px rgba(242,196,95,0.3);
+  font-size: 0.86rem;
+  animation: toast-in .35s ease;
+}
+.toast strong { color: var(--gold); display: block; margin-bottom: 2px; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(20px);} to { opacity: 1; transform: translateX(0);} }
+
+.mentor {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 400;
+  max-width: 300px;
+  font-family: var(--font-body);
+}
+.mentor-toggle {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--gold), var(--brass));
+  border: 2px solid #6d4f1e;
+  color: #2a1f08;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  float: right;
+}
+.mentor-panel {
+  background: linear-gradient(160deg, var(--panel-soft), var(--panel));
+  border: 1px solid var(--brass);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--cream);
+  margin-top: 8px;
+  clear: both;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: none;
+}
+.mentor.is-open .mentor-panel { display: block; }
+.mentor-panel h4 { margin: 0 0 6px; color: var(--gold); font-family: var(--font-display); font-size: 0.92rem; }
+.mentor-panel p { margin: 0; font-size: 0.84rem; color: var(--cream); line-height: 1.5; }
+
+/* ---------- leaderboard ---------- */
+.leader-panel {
+  max-width: 1180px;
+  margin: 14px auto 40px;
+  background: linear-gradient(170deg, var(--panel-soft), var(--panel));
+  border: 2px solid var(--brass);
+  border-radius: 16px;
+  padding: 18px 20px;
+  color: var(--cream);
+}
+.leader-panel h3 { font-family: var(--font-display); color: var(--gold); margin: 0 0 10px; }
+.leader-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.leader-tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--brass);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.leader-tab.active { background: var(--gold); color: #2a1f08; font-weight: 700; border-color: #8c6a2c; }
+.leader-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.leader-table th, .leader-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(199,154,69,0.25); }
+.leader-table th { color: var(--amber); font-weight: 600; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.leader-empty { color: var(--muted); font-size: 0.86rem; padding: 10px 2px; }
+.rank-medal { font-weight: 700; color: var(--gold); }
+
+/* ---------- modals ---------- */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,9,6,0.72);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 600;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+.modal-overlay.is-open { opacity: 1; pointer-events: auto; }
+.modal-box {
+  background: linear-gradient(170deg, var(--parchment-soft), var(--parchment));
+  border-radius: 16px;
+  border: 3px solid var(--brass);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 22px 24px;
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+}
+.modal-box.modal-wide { max-width: 780px; }
+.modal-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: #6d4f1e;
+  margin: 0 0 4px;
+  text-align: center;
+}
+.modal-subtitle { text-align: center; color: #7a6a4a; font-size: 0.82rem; margin-bottom: 16px; }
+
+/* prologue / story modal */
+.story-box {
+  max-width: 620px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(199,154,69,0.14), transparent 55%),
+    linear-gradient(170deg, var(--parchment-soft), var(--parchment));
+  border-color: var(--brass);
+}
+.story-eyebrow {
+  text-align: center;
+  font-family: var(--font-display);
+  letter-spacing: 0.3em;
+  font-size: 0.68rem;
+  color: #8c6a2c;
+  margin-bottom: 4px;
+}
+.story-title { margin-bottom: 6px; }
+.story-seal {
+  width: 46px; height: 46px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  border: 2px solid var(--brass);
+  background: radial-gradient(circle, #2b271e, #17150f);
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 0 14px rgba(242,196,95,0.35), inset 0 0 8px rgba(0,0,0,0.6);
+}
+.story-text {
+  font-family: var(--font-serif);
+  font-size: 0.92rem;
+  line-height: 1.9;
+  color: #3c3120;
+  margin-bottom: 18px;
+}
+.story-text p { margin: 0 0 12px; }
+.story-text strong { color: #6d4f1e; }
+.story-quote {
+  text-align: center;
+  font-style: italic;
+  color: #6d4f1e;
+  border-top: 1px dashed var(--brass);
+  padding-top: 12px;
+  margin-top: 6px !important;
+}
+
+/* map modal */
+.map-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px double var(--brass);
+  margin-bottom: 16px;
+  box-shadow: inset 0 0 0 6px rgba(244,236,217,0.5), 0 8px 24px rgba(0,0,0,0.25);
+  background: #e8dab3;
+}
+.map-visual img.asset-img { width: 100%; height: 100%; }
+.map-fallback-svg { width: 100%; height: 100%; display: block; }
+.map-spot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 92px;
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+.map-spot .icon-wrap {
+  width: 44px; height: 44px;
+  margin: 0 auto 4px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--brass);
+  background: #1c1a14;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+  transition: transform .2s ease;
+  position: relative;
+}
+.map-spot:hover .icon-wrap { transform: scale(1.1); }
+.map-spot.selected .icon-wrap { border-color: var(--gold); box-shadow: 0 0 14px rgba(242,196,95,0.65); }
+.spot-badge {
+  position: absolute;
+  top: -22px; left: 50%;
+  transform: translateX(-50%);
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2b271e, #100f0c);
+  border: 2px solid var(--brass);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+.map-spot.selected .spot-badge { border-color: var(--gold); box-shadow: 0 0 10px rgba(242,196,95,0.7); }
+.map-spot .spot-name {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--cream);
+  background: rgba(20,18,14,0.82);
+  border: 1px solid var(--brass);
+  border-radius: 7px;
+  padding: 3px 6px;
+  line-height: 1.3;
+}
+.map-spot .spot-name strong { display: block; font-family: var(--font-display); font-size: 0.74rem; color: var(--gold); }
+.spot-a { left: 50%; top: 55%; }
+.spot-b { left: 79%; top: 29%; }
+.spot-c { left: 20%; top: 29%; }
+.spot-d { left: 78%; top: 80%; }
+
+.zone-detail {
+  background: rgba(255,255,255,0.5);
+  border: 1px dashed var(--brass);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 0.86rem;
+  min-height: 42px;
+}
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+.field label { display: block; font-size: 0.76rem; color: #6d4f1e; margin-bottom: 4px; }
+.field input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--brass);
+  background: #fffdf6;
+  font-size: 0.9rem;
+}
+.form-error { color: var(--danger); font-size: 0.8rem; min-height: 18px; margin-bottom: 6px; }
+
+/* method modal */
+.method-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+@media (max-width: 560px) { .method-options { grid-template-columns: 1fr; } }
+.method-btn {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--brass);
+  background: #fffdf6;
+  cursor: pointer;
+  font-size: 0.86rem;
+  text-align: left;
+  color: var(--ink);
+}
+.method-btn:hover { background: #fdf3d8; }
+.method-btn.correct { background: #dcefd2; border-color: var(--success); }
+.method-btn.wrong { background: #f6d9d2; border-color: var(--danger); }
+.method-pair-preview { display: flex; justify-content: space-around; align-items: center; gap: 10px; margin: 6px 0 10px; background: rgba(255,255,255,0.5); border-radius: 10px; padding: 12px; }
+.method-feedback { min-height: 22px; font-size: 0.86rem; color: var(--danger); text-align: center; }
+
+/* badge modal */
+.badge-hero {
+  width: 100%; aspect-ratio: 3/1; border-radius: 12px; overflow: hidden; border: 2px solid var(--brass); margin-bottom: 14px;
+}
+.badge-hero img.asset-img { width: 100%; height: 100%; }
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 620px) { .badge-grid { grid-template-columns: repeat(2, 1fr); } }
+.badge-item { text-align: center; padding: 10px 6px; border-radius: 10px; border: 1px solid var(--brass); background: rgba(255,255,255,0.4); }
+.badge-item .glyph { width: 52px; height: 52px; margin: 0 auto 6px; border-radius: 50%; }
+.badge-item.locked { opacity: 0.4; filter: grayscale(1); }
+.badge-item .name { font-size: 0.74rem; }
+.ach-list { display: flex; flex-direction: column; gap: 8px; }
+.ach-item { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--brass); border-radius: 10px; padding: 8px 12px; background: rgba(255,255,255,0.4); font-size: 0.84rem; }
+.ach-item.locked { opacity: 0.45; }
+.ach-item .exp-tag { color: #6d4f1e; font-weight: 700; }
+
+/* certificate */
+.certificate-document {
+  border: 6px double var(--brass);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 45%, transparent 0 120px, rgba(199,154,69,0.05) 121px, transparent 200px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #fbf6e9, #f4ecd9);
+  padding: 26px 22px;
+  position: relative;
+}
+.cert-banner {
+  background: linear-gradient(160deg, #2c2a22, #17150f);
+  color: var(--gold);
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 8px;
+  margin: -8px -8px 16px;
+  border: 1px solid var(--brass);
+}
+.cert-banner .cn-title { font-family: var(--font-display); font-size: 1.3rem; }
+.cert-banner .en-title { font-size: 0.68rem; letter-spacing: 0.2em; color: var(--amber); margin-top: 2px; }
+.cert-name-row { text-align: center; margin: 6px 0 14px; }
+.cert-name-row .name { font-family: var(--font-display); font-size: 1.7rem; color: #4a2f0d; border-bottom: 2px solid var(--brass); display: inline-block; padding: 0 20px 4px; }
+.cert-emblem-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0; }
+.cert-emblem-row .glyph { width: 64px; height: 64px; border-radius: 50%; }
+.cert-body-text { text-align: center; font-size: 0.9rem; line-height: 1.8; max-width: 520px; margin: 0 auto 16px; color: #3c3120; }
+.cert-record-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 18px; font-size: 0.82rem; margin-bottom: 16px; }
+.cert-record-grid div span { color: #6d4f1e; }
+.cert-bars { margin-bottom: 16px; }
+.cert-bar-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.76rem; }
+.cert-bar-track { height: 8px; border-radius: 6px; background: rgba(0,0,0,0.08); overflow: hidden; }
+.cert-bar-fill { height: 100%; background: linear-gradient(90deg, var(--brass), var(--gold)); }
+.cert-remark { text-align: center; font-style: italic; font-size: 0.84rem; color: #6d4f1e; margin-bottom: 16px; }
+.cert-sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; text-align: center; font-size: 0.76rem; color: #6d4f1e; }
+.cert-sign-row .line { border-top: 1px solid #6d4f1e; margin-bottom: 4px; padding-top: 26px; }
+.cert-code { text-align: center; font-size: 0.72rem; color: #8a7a56; margin-top: 12px; letter-spacing: 0.05em; }
+#certificateActions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+#certificateActions .btn { flex: 1; min-width: 160px; }
+
+/* print */
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  body > main,
+  .mentor,
+  .toast-stack,
+  #introModal,
+  #mapModal,
+  #methodModal,
+  #badgeModal,
+  #certificateActions {
+    display: none !important;
+  }
+
+  #reportModal {
+    position: static !important;
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  .certificate-document {
+    border-width: 7px !important;
+    box-shadow: none !important;
+  }
+}
+
+footer.site-footer {
+  text-align: center;
+  color: #8a7a56;
+  font-size: 0.76rem;
+  padding: 10px 0 30px;
+}
+</style>
 </head>
 <body>
-  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
-  <main class="mx-auto min-h-screen max-w-6xl px-3 py-3 sm:px-5 sm:py-5">
-    <header class="header-compact metal-panel alchemy-circle relative overflow-hidden rounded-2xl p-3 sm:p-4">
-      <div class="relative flex items-center justify-between gap-3"><div><p class="text-[.6rem] font-black tracking-[.18em] text-amber-300">STATE ALCHEMIST EXAM</p><h1 class="display mt-1 text-xl font-black text-[#f6e5bb] sm:text-2xl">因式分解的<span class="text-amber-300">等價交換</span></h1><p id="profileLine" class="mt-1 text-[.7rem] text-stone-400">選擇地圖開始考核。</p></div><div class="flex gap-1.5"><button id="mapButton" class="soft-button rounded-lg px-2.5 py-2 text-xs font-extrabold">⌬ 地圖</button><button id="badgeButton" class="soft-button rounded-lg px-2.5 py-2 text-xs font-extrabold">⚙ 勳章</button><button id="resetButton" class="soft-button rounded-lg px-2.5 py-2 text-xs font-extrabold">⟳</button></div></div>
-      <div class="header-stats relative mt-3 overflow-hidden rounded-xl border border-amber-100/20 bg-black/25">
-        <div class="status-card"><p>激活度</p><div class="flex items-center justify-between text-xs font-bold text-amber-100"><span id="progressLabel">0%</span><span id="pairLabel">0/6</span></div><div class="progress-track mt-1"><div id="progressFill" class="progress-fill"></div></div></div>
-        <div class="status-card"><p>EXP</p><p id="expLabel" class="font-black text-[#f7dc8e]">0 EXP</p><p id="rankLabel" class="text-stone-300">鍊金見習生</p></div>
-        <div class="status-card"><p>COMBO</p><p id="comboLabel" class="font-black text-[#f7dc8e]">×1</p><p id="comboNote" class="text-stone-300">能量待命</p></div>
-        <div class="status-card"><p>時計</p><p id="timeLabel" class="font-black text-[#f7dc8e]">00:00</p><p id="moveLabel" class="text-stone-300">翻牌 0 次</p></div>
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<div id="appRoot">
+<main>
+  <!-- ============ A. Top status panel ============ -->
+  <header class="top-panel">
+    <div class="eyebrow">STATE ALCHEMIST EXAM</div>
+    <h1>因式分解的等價交換</h1>
+    <div class="student-line" id="studentLine">鍊金術師：<strong>——</strong> · 班別 <strong>——</strong> · 編號 <strong>——</strong> · 階級：<strong id="studentRank">鍊金見習生</strong></div>
+    <div class="top-actions">
+      <button class="btn" id="btnOpenIntro">📜 序章</button>
+      <button class="btn" id="btnOpenMap">⌬ 地圖</button>
+      <button class="btn" id="btnOpenBadges">⚙ 勳章</button>
+      <button class="btn" id="btnRestart">⟳ 重新開始</button>
+    </div>
+    <div class="status-grid">
+      <div class="status-cell">
+        <div class="label">激活度</div>
+        <div class="value"><span id="statActivation">0</span>%</div>
+        <div class="sub"><span id="statPairsDone">0</span> / 6 對完成</div>
+        <div class="progress-track"><div class="progress-fill" id="activationBar"></div></div>
       </div>
-    </header>
-
-    <section class="character-stage mt-3 rounded-2xl">
-      <div class="character-copy"><p class="text-[.62rem] font-black tracking-[.16em] text-amber-300">ALCHEMY MISSION</p><h2 class="display mt-1 text-2xl font-black text-[#fff0c7]">公式配對！</h2><p class="mt-1 text-sm text-stone-200">找同一對，再選法則。</p><span id="bankIndicator" class="bank-indicator mt-2">◌ 題庫待命</span></div><img class="character-action" src="/manus-storage/fma-action_62084330.jpeg" alt="鋼之鍊金術師角色鍊成畫面" /><img class="character-cast" src="/manus-storage/fma-cast_d3dc2cbc.jpeg" alt="鋼之鍊金術師角色群像" /><span class="stage-orb">⌬</span>
-    </section>
-
-    <section class="metal-panel mt-3 rounded-2xl p-3 sm:p-4">
-      <div class="flex items-center justify-between gap-2"><div><p class="text-[.62rem] font-black tracking-[.16em] text-amber-300">TRANSMUTATION ARRAY</p><h2 id="zoneTitle" class="display mt-1 text-xl font-black text-[#f5e5bf]">選擇修煉地</h2><p id="zoneDescription" class="hidden"></p></div><div class="compact-protocol text-xs font-bold text-amber-100"><span class="seal !h-9 !w-9 text-sm">⌬</span><span id="protocolLabel">由地圖開始</span></div></div>
-      <div class="mt-3 flex items-center justify-between gap-3"><p id="instructionLine" class="text-xs leading-5 text-stone-300">翻開兩張卡，找出對應公式。</p><span id="waveLabel" class="shrink-0 rounded-full border border-amber-100/25 bg-black/20 px-2.5 py-1 text-[.65rem] font-black text-amber-200">第一波 · 8 張卡</span></div>
-      <div id="cardGrid" class="game-grid mt-3 grid grid-cols-4 gap-3 sm:gap-4" aria-label="因式分解鍊成卡牌"></div>
-      <div id="feedbackPanel" class="mt-3 rounded-xl border border-amber-100/20 bg-black/20 p-3 text-sm leading-5 text-stone-200"><p id="feedbackTitle" class="font-extrabold text-amber-200">鍊金筆記</p><p id="feedbackText" class="mt-1">選擇修煉地後開始鍊成。</p></div>
-    </section>
-
-    <section class="metal-panel mt-3 rounded-2xl p-4 sm:p-5">
-      <div class="flex items-center justify-between gap-3"><div><p class="text-[.62rem] font-black tracking-[.16em] text-amber-300">ALCHEMIST RECORD</p><h2 class="display mt-1 text-lg font-black text-[#f5e5bf]">鍊金術師龍虎榜</h2></div><div class="grid grid-cols-2 rounded-lg border border-amber-100/20 bg-black/20 p-1"><button id="eliteTab" class="rounded-md bg-amber-200 px-3 py-2 text-xs font-extrabold text-stone-900">首席龍虎榜</button><button id="breakTab" class="rounded-md px-3 py-2 text-xs font-extrabold text-stone-300">突破龍虎榜</button></div></div>
-      <p id="leaderboardCaption" class="mt-2 text-xs leading-5 text-stone-400">最快通關；同分以較少翻牌優先。</p><div id="leaderboardRows" class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5"></div>
-    </section>
-  </main>
-
-  <aside id="mentor" class="mentor is-collapsed" aria-live="polite">
-    <div class="flex items-start gap-3 p-3"><button id="mentorToggle" class="mentor-orb shrink-0" aria-label="展開或收合真理之嚮導">⟡</button><div class="min-w-0 flex-1"><div class="flex items-center justify-between gap-2"><p class="text-xs font-bold tracking-[.15em] text-amber-200">真理之嚮導 AI</p><button id="mentorClose" class="text-xs font-bold text-stone-400 hover:text-amber-200">收合</button></div><p id="mentorText" class="mt-1 text-sm leading-6 text-stone-200">鍊金筆記已展開：先觀察各項是否共有「公因因子」，再尋找平方差、完全平方或可分組的結構。</p><p class="mt-2 text-xs font-bold text-amber-300">失敗不扣除基礎分數；重試就是等價交換。</p></div></div>
-  </aside>
-
-  <div id="mapModal" class="modal fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/75 p-3" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
-    <div class="my-auto w-full max-w-5xl rounded-2xl border border-amber-100/35 bg-[#1c1b18] p-4 shadow-metal sm:p-6">
-      <div class="flex items-start justify-between gap-3"><div class="flex items-center gap-3"><img class="map-character !h-12 !w-12" src="/manus-storage/fma-brothers_0ca6b940.jpeg" alt="鋼之鍊金術師主角" /><div><p class="text-[.62rem] font-black tracking-[.18em] text-amber-300">VIRTUAL ALCHEMY ATLAS</p><h2 id="mapTitle" class="display text-2xl font-black text-[#f5e5bf] sm:text-3xl">虛擬修煉地圖</h2><p class="mt-1 text-sm text-stone-300">點選地標，開始考核。</p></div></div><button id="mapClose" class="soft-button rounded-lg px-3 py-2 text-sm font-bold">關閉</button></div>
-      <section class="mission-brief mt-4" aria-label="考核任務背景"><span class="mission-brief-icon">⌬</span><div><p class="text-[.65rem] font-black tracking-[.16em] text-amber-300">國家鍊金術師考核任務</p><p class="mt-1 text-sm leading-5 text-stone-200">在亞美斯多利斯，鍊金術師必須先<strong class="text-amber-200">理解、分解、再構成</strong>。你將把展開式「質塊」還原為正確的因式「構型」，啟動鍊成陣。</p></div></section>
-      <div class="map-view mt-4" aria-label="虛擬修煉地圖">
-        <img class="atlas-reference" src="/manus-storage/alchemy-atlas-reference_782d1891.png" alt="國家鍊金術師修煉地圖：中央市、北方要塞、達普里斯地下室與真理之門考場" />
-        <div id="mapNodes" class="map-nodes"></div>
+      <div class="status-cell">
+        <div class="label">EXP</div>
+        <div class="value" id="statExp">0</div>
+        <div class="sub">階級：<span id="statRankName">鍊金見習生</span></div>
       </div>
-      <p id="mapSelection" class="mt-3 rounded-lg border border-amber-100/20 bg-black/20 px-3 py-2 text-center text-xs font-bold text-amber-100">已選擇：中央市修煉場 · 提取公因式</p>
-      <section class="mt-4 border-t border-amber-100/20 pt-4"><div class="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]"><label class="text-xs font-bold text-stone-300">姓名<input id="playerName" maxlength="30" placeholder="例：愛德" class="mt-1 block w-full rounded-lg border border-amber-100/25 bg-black/25 px-3 py-2 text-sm text-[#f5e5bf] placeholder:text-stone-600" /></label><label class="text-xs font-bold text-stone-300">班別<input id="playerClass" maxlength="30" placeholder="例：3A" class="mt-1 block w-full rounded-lg border border-amber-100/25 bg-black/25 px-3 py-2 text-sm text-[#f5e5bf] placeholder:text-stone-600" /></label><label class="text-xs font-bold text-stone-300">學號<input id="playerId" maxlength="30" placeholder="例：240301" class="mt-1 block w-full rounded-lg border border-amber-100/25 bg-black/25 px-3 py-2 text-sm text-[#f5e5bf] placeholder:text-stone-600" /></label><div class="flex items-end"><button id="beginButton" class="ember-button w-full rounded-xl px-4 py-2.5 text-sm font-black">開始鍊成</button></div></div><p id="mapError" class="mt-2 hidden text-sm font-bold text-red-300"></p></section>
+      <div class="status-cell">
+        <div class="label">COMBO</div>
+        <div class="value"><span id="statCombo">0</span>連</div>
+        <div class="sub" id="statComboMult">倍率 ×1</div>
+      </div>
+      <div class="status-cell">
+        <div class="label">時計</div>
+        <div class="value" id="statTimer">00:00</div>
+        <div class="sub"><span id="statFlips">0</span> 次翻牌</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ B. Mission stage ============ -->
+  <section class="mission-stage">
+    <div class="mission-text">
+      <div class="tag">ALCHEMY MISSION</div>
+      <h2>公式配對！</h2>
+      <p>找同一對，再選法則。</p>
+      <div class="zone-line" id="zoneLine">◌ 尚未選擇修煉地</div>
+    </div>
+    <div class="mission-art" id="missionArt">
+      <img class="asset-img" id="missionArtImg" src="assets/fma-action.jpeg" alt="鍊金術師任務插畫">
+      <div class="mission-orb"></div>
+    </div>
+  </section>
+
+  <!-- ============ C. Game board ============ -->
+  <section class="board-panel">
+    <div class="board-head">
+      <h3 id="boardZoneName">修煉場</h3>
+      <span class="wave-tag" id="waveTag">第一波 · 8 張卡</span>
+    </div>
+    <div class="board-sub">
+      <span class="rule">翻開兩張卡，找出對應公式。</span>
+      <span class="rule">在 8 張卡中找出 4 對；完成 2 對後開放最後 4 張卡。</span>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+  </section>
+
+  <!-- ============ E. Leaderboard ============ -->
+  <section class="leader-panel">
+    <h3>鍊金術師龍虎榜</h3>
+    <div class="leader-tabs">
+      <button class="leader-tab active" data-tab="master">首席龍虎榜</button>
+      <button class="leader-tab" data-tab="breakthrough">突破龍虎榜</button>
+    </div>
+    <div id="leaderMaster"></div>
+    <div id="leaderBreakthrough" style="display:none;"></div>
+  </section>
+
+  <footer class="site-footer">鋼之鍊金術：因式分解的等價交換 · Alchemy of Factorization — Equivalent Exchange</footer>
+</main>
+</div>
+
+<!-- ============ D. AI Mentor widget ============ -->
+<div class="mentor" id="mentorWidget">
+  <button class="mentor-toggle" id="mentorToggle" aria-label="真理之嚮導">☉</button>
+  <div class="mentor-panel" id="mentorPanel">
+    <h4>真理之嚮導 AI</h4>
+    <p id="mentorText">歡迎，鍊金術師。翻開兩張卡開始尋找公式的等價交換吧。</p>
+  </div>
+</div>
+
+<!-- ============ Prologue / story modal ============ -->
+<div class="modal-overlay is-open" id="introModal">
+  <div class="modal-box story-box">
+    <div class="story-eyebrow">NATIONAL ALCHEMIST EXAMINATION</div>
+    <h2 class="modal-title story-title">序章・亞美斯多利斯的考核令</h2>
+    <div class="story-seal">⚗</div>
+    <div class="story-text">
+      <p>在亞美斯多利斯，鍊金術遵守著唯一的鐵則——<strong>等價交換</strong>。一切鍊成，皆須先「理解」、再「分解」、最後「構成」，缺一不可。</p>
+      <p>今日，元帥親自簽署了你的考核令：你將被派往四個修煉地——<strong>中央市</strong>、<strong>北方要塞布里茲</strong>、<strong>達普里斯地下室</strong>，以及<strong>真理之門</strong>——在那裡，你要把一塊塊「展開式」的原礦，正確地分解、重新構成為「因式」的構型，藉此啟動封印於大地深處的鍊成陣。</p>
+      <p>翻開卡牌，找出彼此對應的展開式與因式；配對成功後，向真理之門證明你所選用的鍊成法則——唯有正確的思考路徑，才能完成真正的等價交換。若鍊成失敗，也不代表停止；真理之門只考驗那些願意再次嘗試的人。</p>
+      <p class="story-quote">「以知識為鍊，在虛擬之地，鍛造更強的自己。」</p>
+    </div>
+    <button class="btn btn-gold btn-block" id="btnIntroContinue">⌬ 展開修煉地圖</button>
+  </div>
+</div>
+
+<!-- ============ F. Map modal ============ -->
+<div class="modal-overlay" id="mapModal">
+  <div class="modal-box modal-wide">
+    <h2 class="modal-title">虛擬修煉地圖</h2>
+    <div class="modal-subtitle">選擇修煉地，填寫鍊金術師資料，開始鍊成考核</div>
+    <div class="map-visual" id="mapVisual">
+      <img class="asset-img" id="mapImg" src="assets/alchemy-atlas-reference.png" alt="修煉地圖">
+      <button class="map-spot spot-a" data-zone="A"><span class="spot-badge">A</span><span class="icon-wrap"><img class="asset-img" src="assets/alchemy-sigil-13.png" alt=""></span><span class="spot-name"><strong>中央市</strong>修煉場</span></button>
+      <button class="map-spot spot-b" data-zone="B"><span class="spot-badge">B</span><span class="icon-wrap"><img class="asset-img" src="assets/alchemy-sigil-14.png" alt=""></span><span class="spot-name"><strong>北方要塞</strong>布里茲</span></button>
+      <button class="map-spot spot-c" data-zone="C"><span class="spot-badge">C</span><span class="icon-wrap"><img class="asset-img" src="assets/alchemy-sigil-15.png" alt=""></span><span class="spot-name"><strong>達普里斯</strong>地下室</span></button>
+      <button class="map-spot spot-d" data-zone="D"><span class="spot-badge">D</span><span class="icon-wrap"><img class="asset-img" src="assets/alchemy-sigil-16.png" alt=""></span><span class="spot-name"><strong>真理之門</strong>考場</span></button>
+    </div>
+    <div class="zone-detail" id="zoneDetail">請於地圖上選擇一個修煉地。</div>
+    <div class="form-grid">
+      <div class="field"><label>姓名</label><input type="text" id="inputName" placeholder="請輸入姓名"></div>
+      <div class="field"><label>班別</label><input type="text" id="inputClass" placeholder="例如 3A"></div>
+      <div class="field"><label>學號</label><input type="text" id="inputStudentId" placeholder="例如 21"></div>
+    </div>
+    <div class="form-error" id="mapFormError"></div>
+    <button class="btn btn-gold btn-block" id="btnStartRun">開始鍊成</button>
+  </div>
+</div>
+
+<!-- ============ Method verification modal ============ -->
+<div class="modal-overlay" id="methodModal">
+  <div class="modal-box">
+    <h2 class="modal-title">鍊成法則驗證</h2>
+    <div class="modal-subtitle">配對成功！請選出正確的因式分解法則</div>
+    <div class="method-pair-preview" id="methodPairPreview"></div>
+    <div class="method-options" id="methodOptions"></div>
+    <div class="method-feedback" id="methodFeedback"></div>
+  </div>
+</div>
+
+<!-- ============ G. Badge library modal ============ -->
+<div class="modal-overlay" id="badgeModal">
+  <div class="modal-box modal-wide">
+    <button class="modal-close" data-close="badgeModal">✕</button>
+    <h2 class="modal-title">國家鍊金術師勳章庫</h2>
+    <div class="modal-subtitle">集齊四枚地區徽章，達成全地圖鍊成</div>
+    <div class="badge-hero"><img class="asset-img" src="assets/fma-cast.jpeg" alt="鍊金術師群像"></div>
+    <h4 style="font-family:var(--font-display); color:#6d4f1e; margin:0 0 8px;">地區徽章</h4>
+    <div class="badge-grid" id="badgeGrid"></div>
+    <h4 style="font-family:var(--font-display); color:#6d4f1e; margin:0 0 8px;">額外成就</h4>
+    <div class="ach-list" id="achList"></div>
+  </div>
+</div>
+
+<!-- ============ H. Certificate modal ============ -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-box modal-wide">
+    <button class="modal-close" data-close="reportModal">✕</button>
+    <div class="certificate-document" id="certificateDoc">
+      <div class="cert-banner">
+        <div class="cn-title">國家鍊金術師資格證書</div>
+        <div class="en-title">CERTIFICATE OF TRANSMUTATION MASTERY</div>
+      </div>
+      <div class="cert-name-row"><span class="name" id="certName">——</span></div>
+      <div class="cert-emblem-row">
+        <span class="glyph"><img class="asset-img" src="assets/state-alchemist-emblem-dark.png" alt=""></span>
+        <span class="glyph"><img class="asset-img" src="assets/IMG_0814.jpeg" alt=""></span>
+        <span class="glyph"><img class="asset-img" src="assets/state-alchemist-emblem-dark.png" alt=""></span>
+      </div>
+      <div class="cert-body-text">茲證明 <strong id="certNameInline">——</strong> 已完成國家鍊金術師的因式分解鍊成考核，具備以結構思考、正確分解並重新構成公式之能力。</div>
+      <div class="cert-record-grid">
+        <div><span>考核地點：</span><span id="certZone">——</span></div>
+        <div><span>鍊成時間：</span><span id="certTime">——</span></div>
+        <div><span>翻牌紀錄：</span><span id="certFlips">——</span></div>
+        <div><span>獲得 EXP：</span><span id="certExp">——</span></div>
+        <div><span>簽發日期：</span><span id="certDate">——</span></div>
+        <div><span>證書編號：</span><span id="certCode">——</span></div>
+      </div>
+      <div class="cert-bars" id="certBars"></div>
+      <div class="cert-remark" id="certRemark">真理之門評語：等價交換，付出與收穫終將對等。</div>
+      <div class="cert-sign-row">
+        <div><div class="line"></div>國家鍊金術師考核局</div>
+        <div><div class="line"></div>真理之門審核印</div>
+      </div>
+    </div>
+    <div id="certificateActions">
+      <button class="btn" id="btnBackToMap">返回修煉地圖</button>
+      <button class="btn btn-gold" id="btnPrintCert">⌚ 列印資格證</button>
     </div>
   </div>
+</div>
 
-  <div id="methodModal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" role="dialog" aria-modal="true" aria-labelledby="methodTitle">
-    <div class="alchemy-circle w-full max-w-xl overflow-hidden rounded-2xl border border-amber-100/45 bg-[#292821] p-6 shadow-metal sm:p-7"><div class="relative"><div class="mx-auto seal">⚖</div><p class="mt-4 text-center text-xs font-bold tracking-[.18em] text-amber-300">LAW OF EQUIVALENT EXCHANGE</p><h2 id="methodTitle" class="display mt-1 text-center text-3xl font-black text-[#f5e5bf]">鍊成成功，請驗證法則</h2><p id="methodPrompt" class="mx-auto mt-3 max-w-lg text-center text-sm leading-6 text-stone-200">這一對質塊已經互相呼應。它最主要遵從哪一項因式分解法則？</p><div id="methodOptions" class="mt-5 grid gap-2 sm:grid-cols-2"></div><p id="methodFeedback" class="mt-4 min-h-6 text-center text-sm font-bold text-amber-200"></p><p class="mt-3 text-center text-xs leading-5 text-stone-400">方法答對後才會令鍊成陣取得能量；答錯可無限次修正。</p></div></div>
-  </div>
+<script>
+(function () {
+"use strict";
 
-  <div id="badgeModal" class="modal fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/75 p-4" role="dialog" aria-modal="true" aria-labelledby="badgeTitle">
-    <div class="my-auto w-full max-w-3xl rounded-2xl border border-amber-100/35 bg-[#1c1b18] p-6 shadow-metal"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold tracking-[.18em] text-amber-300">STATE ALCHEMIST ARCHIVES</p><h2 id="badgeTitle" class="display mt-1 text-3xl font-black text-[#f5e5bf]">國家鍊金術師勳章庫</h2></div><button id="badgeClose" class="soft-button rounded-lg px-3 py-2 text-sm font-bold">關閉</button></div><p class="mt-2 text-sm text-stone-300">完成各地的專屬鍊成課題即可收集地區徽章；集齊四枚才算通過完整的國家鍊金術師修煉。</p><p id="badgeCollectionProgress" class="mt-4 text-sm font-black text-amber-200">地區徽章：0 / 4</p><div id="zoneBadgeGrid" class="zone-badge-grid mt-2"></div><div id="badgeGrid" class="mt-5 grid gap-3 sm:grid-cols-2"></div></div>
-  </div>
+/* =====================================================================
+   DATA
+   ===================================================================== */
+var METHODS = [
+  { id: 'gcf', label: '提取最大公因式' },
+  { id: 'difference', label: '平方差公式' },
+  { id: 'perfect', label: '完全平方公式' },
+  { id: 'group', label: '分組法' },
+  { id: 'binomial', label: '提取二項式公因式' },
+  { id: 'gcf-difference', label: '先提公因式，再用平方差' }
+];
+function methodLabel(id) { var m = METHODS.filter(function (x) { return x.id === id; })[0]; return m ? m.label : id; }
 
-  <div id="reportModal" class="modal fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/75 p-4" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
-    <article class="certificate-document my-auto w-full max-w-3xl" aria-label="國家鍊金術師資格證書">
-      <header class="certificate-banner"><p class="certificate-kicker">STATE ALCHEMIST EXAMINATION AUTHORITY</p><h2 id="reportTitle" class="certificate-title">國家鍊金術師資格證書</h2><p class="certificate-subtitle">CERTIFICATE OF TRANSMUTATION MASTERY</p></header>
-      <div class="certificate-emblem-row"><div class="certificate-emblem"><img id="certificateSigil" class="certificate-sigil" src="/manus-storage/alchemy-sigil-13_f90e276b.png" alt="修煉地鍊成陣" /></div><p class="certificate-emblem-text">理解・分解・再構成<br />等價交換之準則</p><div class="seal !h-14 !w-14 text-xl">⌚</div></div>
-      <div class="certificate-body"><p class="certificate-statement">茲證明</p><h3 id="certificateName" class="certificate-name">鍊金術師</h3><p id="certificatePlayer" class="certificate-statement">已完成國家鍊金術師的因式分解鍊成考核，具備以結構思考、正確分解並重新構成公式之能力。</p><p id="certificateCourse" class="certificate-course">考核課題</p>
-        <dl class="certificate-ledger"><div><dt>考核地點</dt><dd id="certificateZone">—</dd></div><div><dt>鍊成時間</dt><dd id="reportTime">00:00</dd></div><div><dt>翻牌紀錄</dt><dd id="reportMoves">0 次</dd></div><div><dt>獲得 EXP</dt><dd id="reportExp">+0 EXP</dd></div><div><dt>簽發日期</dt><dd id="certificateDate">—</dd></div><div><dt>證書編號</dt><dd id="certificateNumber">—</dd></div></dl>
-        <section class="mt-5"><p class="text-xs font-black tracking-[.14em] text-[#795720]">TRANSMUTATION MASTERY PROFILE</p><h4 class="display mt-1 text-2xl font-black">鍊成技巧紀錄</h4><div id="skillReport" class="mt-4 grid gap-3 sm:grid-cols-2"></div></section>
-        <p id="truthReview" class="certificate-verdict"></p>
-        <div class="certificate-signatures"><p class="certificate-signature">國家鍊金術師考核局</p><p class="certificate-signature">真理之門審核印</p></div><p class="certificate-meta">此證書由本機遊戲成績自動產生 · 學習紀錄僅儲存在此裝置</p>
-        <div id="certificateActions" class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center"><button id="reportClose" class="soft-button rounded-xl px-5 py-3 text-sm font-black">返回修煉地圖</button><button id="printButton" class="ember-button rounded-xl px-5 py-3 text-sm font-black">⌚ 列印資格證</button></div>
-      </div>
-    </article>
-  </div>
+var RANKS = [
+  { min: 0, name: '鍊金見習生' },
+  { min: 300, name: '准國家鍊金術師' },
+  { min: 800, name: '國家鍊金術師' },
+  { min: 1500, name: '鋼之鍊金術師' }
+];
+function rankForExp(exp) {
+  var name = RANKS[0].name;
+  for (var i = 0; i < RANKS.length; i++) { if (exp >= RANKS[i].min) name = RANKS[i].name; }
+  return name;
+}
 
-  <script>
-  (() => {
-    'use strict';
-    // ===== Firebase 設定開始 =====
-    const firebaseConfig = {
-      apiKey: "AIzaSyC92Xdbx1WqHsKN_oWE2FdalSPiLTC55qI",
-      authDomain: "factorization-card-game.firebaseapp.com",
-      databaseURL: "https://factorization-card-game-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "factorization-card-game",
-      storageBucket: "factorization-card-game.firebasestorage.app",
-      messagingSenderId: "453669676484",
-      appId: "1:453669676484:web:14c5463402a343b8997091",
-      measurementId: "G-Z4E0EDX83P"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    // ===== Firebase 設定結束 =====
-    const STORAGE = { profile:'alchemy-factorization.profile.v1', history:'alchemy-factorization.history.v1', badges:'alchemy-factorization.badges.v1', zoneBadges:'alchemy-factorization.zone-badges.v1', exp:'alchemy-factorization.exp.v1' };
-    const methods = [
-      { id:'gcf', label:'提取最大公因式', clue:'先觀察各項共有的係數與字母因子。' },
-      { id:'difference', label:'平方差公式', clue:'辨認兩個平方項相減，拆為共軛二項式。' },
-      { id:'perfect', label:'完全平方公式', clue:'檢查首尾平方項及中間項是否為正、負 2AB。' },
-      { id:'gcf-difference', label:'先提公因式，再用平方差', clue:'先提出共同因子，才會顯出平方差結構。' },
-      { id:'group', label:'分組法', clue:'將各項分組，抽出相同的共同二項式。' },
-      { id:'binomial', label:'提取二項式公因式', clue:'把反覆出現的一整個括號當成同一個元素。' }
-    ];
-    const SIGILS = [
-      '/manus-storage/alchemy-sigil-01_0d8eb317.png','/manus-storage/alchemy-sigil-02_21515a6e.png','/manus-storage/alchemy-sigil-03_b74d8023.png','/manus-storage/alchemy-sigil-04_f896b601.png',
-      '/manus-storage/alchemy-sigil-05_a6c47d27.png','/manus-storage/alchemy-sigil-06_05c1876c.png','/manus-storage/alchemy-sigil-07_884531e1.png','/manus-storage/alchemy-sigil-08_21386b14.png',
-      '/manus-storage/alchemy-sigil-09_f25ed0f9.png','/manus-storage/alchemy-sigil-10_26e248d9.png','/manus-storage/alchemy-sigil-11_41075740.png','/manus-storage/alchemy-sigil-12_a42dd350.png',
-      '/manus-storage/alchemy-sigil-13_f90e276b.png','/manus-storage/alchemy-sigil-14_94eef6c1.png','/manus-storage/alchemy-sigil-15_3b0f1176.png','/manus-storage/alchemy-sigil-16_716ae04c.png'
-    ];
-    const zones = [
-      { id:'A', sigil:SIGILS[12], badgeId:'central-gcf', badgeName:'中央市・公因因子徽章', label:'中央市・公因式訓練', place:'中央市修煉場', subtitle:'鍊成課題：提取公因式', intro:'在中央市鍊金場，先辨別所有質塊共有的係數與字母因子。', pairs:[
-        ['12x^2y - 18xy^2','6xy(2x-3y)','gcf'], ['-5a^3 + 15a^2','-5a^2(a-3)','gcf'], ['14a^2b^3 + 21a^3b^2','7a^2b^2(2b+3a)','gcf'], ['-4p^2q - 12pq^2','-4pq(p+3q)','gcf'], ['18u^2v - 24uv^2','6uv(3u-4v)','gcf'], ['-9r^3s + 6r^2s^2','-3r^2s(3r-2s)','gcf'] ] },
-      { id:'B', sigil:SIGILS[13], badgeId:'briggs-identity', badgeName:'布里茲・恆等式徽章', label:'布里茲・恆等式訓練', place:'北方要塞布里茲', subtitle:'鍊成課題：恆等式', intro:'在冰原要塞中，辨別平方差與完全平方，讓鍊成穩定成形。', pairs:[
-        ['16m^2 - 25n^2','(4m-5n)(4m+5n)','difference'], ['9x^2 - 24xy + 16y^2','(3x-4y)^2','perfect'], ['49x^2 - 81y^2','(7x-9y)(7x+9y)','difference'], ['25a^2 + 60ab + 36b^2','(5a+6b)^2','perfect'], ['36p^2 - 49q^2','(6p-7q)(6p+7q)','difference'], ['4x^2 + 20xy + 25y^2','(2x+5y)^2','perfect'] ] },
-      { id:'C', sigil:SIGILS[14], badgeId:'dublith-group', badgeName:'達普里斯・分組構成徽章', label:'達普里斯・分組構成訓練', place:'達普里斯地下室', subtitle:'鍊成課題：分組法', intro:'地底鍊成陣要求你以分組法找出重複的共同結構。', pairs:[
-        ['ax-bx-ay+by','(a-b)(x-y)','group'], ['2pa+2pb-qa-qb','(a+b)(2p-q)','group'], ['x(x-2)-3(x-2)','(x-2)(x-3)','binomial'], ['cx-dx+cy-dy','(c-d)(x+y)','group'], ['3am-3an-2bm+2bn','(3a-2b)(m-n)','group'], ['y(2y+1)+4(2y+1)','(2y+1)(y+4)','binomial'] ] },
-      { id:'D', sigil:SIGILS[15], badgeId:'truth-mixed', badgeName:'真理之門・綜合鍊成徽章', label:'真理之門・混合鍊成考核', place:'真理之門考場', subtitle:'鍊成課題：混合題', intro:'真理之門前，公因式、恆等式與分組法同時交織；精確選擇鍊成法則。', pairs:[
-        ['3x^2 - 27','3(x-3)(x+3)','gcf-difference'], ['2m^3 - 32m','2m(m-4)(m+4)','gcf-difference'], ['12x^2y - 18xy^2','6xy(2x-3y)','gcf'], ['49x^2 - 81y^2','(7x-9y)(7x+9y)','difference'], ['9x^2 - 24xy + 16y^2','(3x-4y)^2','perfect'], ['2pa+2pb-qa-qb','(a+b)(2p-q)','group'], ['x(x-2)-3(x-2)','(x-2)(x-3)','binomial'], ['25a^2 + 60ab + 36b^2','(5a+6b)^2','perfect'] ] }
-    ];
-    const achievements = [
-      { id:'will', icon:'🦾', title:'鋼之意志', description:'無任何錯配、方法誤判完成鍊成。', reward:80 },
-      { id:'speed', icon:'⚡', title:'神速鍊成', description:'90 秒內完成一整套鍊成。', reward:70 },
-      { id:'exchange', icon:'⚖️', title:'等價交換', description:'多次嘗試與修正後仍成功完成鍊成。', reward:50 },
-      { id:'truth', icon:'門', title:'真理窺探者', description:'所有分解驗證方法一次全對。', reward:100 },
-      { id:'atlas', icon:'⌬', title:'國家鍊金術師', description:'已收集四處修煉地的專屬徽章。', reward:180 }
-    ];
-    const $ = (selector) => document.querySelector(selector);
-    const els = {
-      grid:$('#cardGrid'), progressFill:$('#progressFill'), progressLabel:$('#progressLabel'), pairLabel:$('#pairLabel'), expLabel:$('#expLabel'), rankLabel:$('#rankLabel'), comboLabel:$('#comboLabel'), comboNote:$('#comboNote'), timeLabel:$('#timeLabel'), moveLabel:$('#moveLabel'), zoneTitle:$('#zoneTitle'), zoneDescription:$('#zoneDescription'), protocolLabel:$('#protocolLabel'), instructionLine:$('#instructionLine'), waveLabel:$('#waveLabel'), feedbackTitle:$('#feedbackTitle'), feedbackText:$('#feedbackText'), profileLine:$('#profileLine'), bankIndicator:$('#bankIndicator'), mapModal:$('#mapModal'), mapNodes:$('#mapNodes'), mapSelection:$('#mapSelection'), mapButton:$('#mapButton'), mapClose:$('#mapClose'), beginButton:$('#beginButton'), mapError:$('#mapError'), playerName:$('#playerName'), playerClass:$('#playerClass'), playerId:$('#playerId'), resetButton:$('#resetButton'), methodModal:$('#methodModal'), methodOptions:$('#methodOptions'), methodFeedback:$('#methodFeedback'), methodPrompt:$('#methodPrompt'), badgeModal:$('#badgeModal'), badgeButton:$('#badgeButton'), badgeClose:$('#badgeClose'), badgeGrid:$('#badgeGrid'), zoneBadgeGrid:$('#zoneBadgeGrid'), badgeCollectionProgress:$('#badgeCollectionProgress'), mentor:$('#mentor'), mentorText:$('#mentorText'), mentorToggle:$('#mentorToggle'), mentorClose:$('#mentorClose'), leaderboardRows:$('#leaderboardRows'), leaderboardCaption:$('#leaderboardCaption'), eliteTab:$('#eliteTab'), breakTab:$('#breakTab'), reportModal:$('#reportModal'), reportTime:$('#reportTime'), reportMoves:$('#reportMoves'), reportExp:$('#reportExp'), certificateName:$('#certificateName'), certificatePlayer:$('#certificatePlayer'), certificateCourse:$('#certificateCourse'), certificateZone:$('#certificateZone'), certificateDate:$('#certificateDate'), certificateNumber:$('#certificateNumber'), certificateSigil:$('#certificateSigil'), skillReport:$('#skillReport'), truthReview:$('#truthReview'), reportClose:$('#reportClose'), printButton:$('#printButton'), toastStack:$('#toastStack') };
-    let profile = safeGet(STORAGE.profile, {name:'',className:'',id:''});
-    let totalExp = Number(localStorage.getItem(STORAGE.exp) || 0);
-    let selectedZone = zones[0]; let activeBank=null; let deck=[]; let openCards=[]; let matched=0; let moves=0; let seconds=0; let timer=null; let started=false; let locked=false; let pending=null; let combo=0; let errors=0; let methodErrors=0; let correctMethods=0; let unlockedPairs=4; let methodCounts={gcf:0,difference:0,perfect:0,group:0}; let activeLeaderboard='elite';
-    function safeGet(key, fallback) { try { const value=JSON.parse(localStorage.getItem(key)); return value && typeof value==='object' ? value : fallback; } catch { return fallback; } }
-    function getHistory() { const value=safeGet(STORAGE.history, []); return Array.isArray(value) ? value : []; }
-    function fetchCloudHistory() {
-      return db.ref('leaderboard').once('value').then(snapshot => {
-        const entries = [];
-        snapshot.forEach(child => { entries.push(child.val()); });
-        return entries;
-      }).catch(err => { console.error(err); return []; });
-    }
-    function pushCloudRecord(result) {
-      return db.ref('leaderboard').push(result).catch(err => { console.error(err); });
-    }
-    function getBadges() { const value=safeGet(STORAGE.badges, []); return Array.isArray(value) ? value : []; }
-    function getZoneBadges() { const value=safeGet(STORAGE.zoneBadges, []); return Array.isArray(value) ? value : []; }
-    function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function shuffle(array) { const copy=[...array]; for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [copy[i],copy[j]]=[copy[j],copy[i]];} return copy; }
-    function timeText(value) { return `${String(Math.floor(value/60)).padStart(2,'0')}:${String(value%60).padStart(2,'0')}`; }
-    function rankFor(exp) { if(exp>=800) return '鋼之鍊金術師'; if(exp>=360) return '准國家鍊金術師'; if(exp>=120) return '鍊金術師候補'; return '鍊金見習生'; }
-    function notify(title, text, icon='✦') { const node=document.createElement('div'); node.className='toast'; node.innerHTML=`<span class="text-lg">${icon}</span><div><p class="font-black">${title}</p><p class="mt-0.5 text-xs leading-5">${text}</p></div>`; els.toastStack.append(node); window.setTimeout(()=>node.remove(),4800); }
-    function mentor(text) { els.mentorText.textContent=text; if(window.innerWidth>=640) els.mentor.classList.remove('is-collapsed'); else els.mentor.classList.add('is-collapsed'); }
-    function setFeedback(title, text) { els.feedbackTitle.textContent=title; els.feedbackText.textContent=text; }
-    function updateProfileLine() { els.profileLine.textContent = profile.name ? `鍊金術師：${profile.name} · ${profile.className || '未填班別'} · 編號 ${profile.id || '未填'} · 階級：${rankFor(totalExp)}` : '理解・分解・再構成 —— 啟動鍊成陣，接受國家鍊金術師考核。'; }
-    function updateHud() { const progress=Math.round(matched/6*100); els.progressFill.style.width=`${progress}%`; els.progressLabel.textContent=`${progress}%`; els.pairLabel.textContent=`${matched} / 6 對`; els.expLabel.textContent=`${totalExp} EXP`; els.rankLabel.textContent=rankFor(totalExp); els.comboLabel.textContent=`×${Math.max(1,combo)}`; els.comboNote.textContent=combo>=3?'等價交換能量 ×2！':combo>=2?'連擊鍊成，能量上升':'等價交換能量待命'; els.timeLabel.textContent=timeText(seconds); els.moveLabel.textContent=`翻牌 ${moves} 次`; }
-    function renderMap() { els.mapNodes.replaceChildren(); els.mapSelection.textContent=`已選擇：${selectedZone.place} · ${selectedZone.subtitle.replace('鍊成課題：','')}`; zones.forEach(zone=>{ const node=document.createElement('button'); node.type='button'; node.className=`map-node ${selectedZone.id===zone.id?'is-selected':''}`; node.dataset.zone=zone.id; node.setAttribute('aria-label',`選擇修煉地 ${zone.id}：${zone.place}，${zone.subtitle}`); node.title=`修煉地 ${zone.id}：${zone.subtitle}`; node.innerHTML=`<img class="map-node-sigil" src="${zone.sigil}" alt="" />`; node.addEventListener('click',()=>{selectedZone=zone; renderMap();}); els.mapNodes.append(node); }); }
-    function openModal(modal) { modal.classList.add('is-open'); }
-    function closeModal(modal) { modal.classList.remove('is-open'); }
-    function renderMath() { if(window.MathJax?.typesetPromise) return window.MathJax.typesetPromise([els.grid]); return Promise.resolve(); }
-    function fitFormulas() { els.grid.querySelectorAll('.formula').forEach(formula=>{ formula.style.removeProperty('font-size'); const math=formula.querySelector('mjx-container'); if(!math || !formula.clientWidth) return; const width=math.getBoundingClientRect().width; if(width>formula.clientWidth){ const base=parseFloat(getComputedStyle(formula).fontSize); formula.style.fontSize=`${Math.max(8,base*(formula.clientWidth/width)*.96).toFixed(2)}px`; }}); }
-    function cardData() { return shuffle(shuffle(activeBank.pairs).slice(0,6).flatMap(([raw,factor,method],index)=>[{pair:index+1,kind:'質',expression:String.raw`\(${raw}\)`,method,sigil:SIGILS[index]},{pair:index+1,kind:'因',expression:String.raw`\(${factor}\)`,method,sigil:SIGILS[index+6]}])); }
-    function updateWaveStatus() { if(unlockedPairs===4){ els.waveLabel.textContent='第一波 · 8 張卡'; els.instructionLine.textContent='在 8 張卡中找出 4 對；完成 2 對後開放最後 4 張卡。'; } else { els.waveLabel.textContent='全鍊成陣 · 12 張卡'; els.instructionLine.textContent='全部 12 張卡已開放。找同一對，方法答對才算完成。'; } }
-    function updateCardAvailability() { const before=unlockedPairs; unlockedPairs=matched>=2?6:4; els.grid.querySelectorAll('.math-card').forEach(card=>{const isOpen=Number(card.dataset.pair)<=unlockedPairs;card.classList.toggle('is-locked',!isOpen);card.setAttribute('aria-disabled',String(!isOpen));}); updateWaveStatus(); return unlockedPairs-before; }
-    function createCard(card,index) { const button=document.createElement('button'); button.type='button'; button.className='math-card'; button.dataset.pair=card.pair; button.dataset.kind=card.kind; button.dataset.method=card.method; button.setAttribute('aria-label',`第 ${index+1} 張鍊成卡，尚未翻開`); button.innerHTML=`<span class="card-inner"><span class="card-face card-front"><span class="card-symbol"><img class="card-sigil" src="${card.sigil}" alt="鍊成陣符號" /></span><span class="card-front-label">TRANSMUTE</span><span class="card-lock"><img class="card-sigil" src="${card.sigil}" alt="" /></span></span><span class="card-face card-back"><span class="card-badge">${card.kind}</span><span class="formula">${card.expression}</span><span class="card-check"><img class="card-sigil" src="${card.sigil}" alt="" /></span></span></span>`; button.addEventListener('click',()=>flipCard(button)); return button; }
-    async function startGame() { if(!profile.name || !profile.className || !profile.id){ openModal(els.mapModal); els.mapError.textContent='請填寫姓名、班別和學號。'; els.mapError.classList.remove('hidden'); return; } clearTimeout(window.mismatchTimer); clearInterval(timer); activeBank=selectedZone; deck=cardData(); openCards=[]; matched=0; moves=0; seconds=0; started=false; locked=false; pending=null; combo=0; errors=0; methodErrors=0; correctMethods=0; unlockedPairs=4; methodCounts={gcf:0,difference:0,perfect:0,group:0}; els.grid.replaceChildren(); deck.forEach((card,index)=>els.grid.append(createCard(card,index))); updateCardAvailability(); els.zoneTitle.textContent=selectedZone.place; els.zoneDescription.textContent=selectedZone.subtitle; els.protocolLabel.textContent=`地標 ${selectedZone.id} · ${activeBank.label}`; els.bankIndicator.textContent=`◌ ${activeBank.label} · 6 對`; updateHud(); updateProfileLine(); setFeedback(`${selectedZone.subtitle.replace('鍊成課題：','')}開始！`,'本局共 6 對；先在 8 張卡中完成 2 對，便會開放最後 4 張。'); mentor(`${selectedZone.intro} 每一對還必須通過鍊成法則驗證。`); await renderMath(); fitFormulas(); closeModal(els.mapModal); }
-    function startTimer() { if(started) return; started=true; timer=setInterval(()=>{seconds++;updateHud();},1000); }
-    function flipCard(card) { if(locked || card.classList.contains('is-flipped') || card.classList.contains('is-matched')) return; if(Number(card.dataset.pair)>unlockedPairs){ setFeedback('鍊成符文尚未啟動',`先完成目前波次的配對，便可開放下一批 4 張卡。`); mentor('這張卡仍由鍊成陣封印。完成已開放的配對後再回來挑戰。'); return; } startTimer(); card.classList.add('is-flipped'); card.setAttribute('aria-label',`${card.dataset.kind}卡，已翻開`); openCards.push(card); if(openCards.length===2){moves++; updateHud(); checkPair();} }
-    function checkPair() { const [first,second]=openCards; if(first.dataset.pair===second.dataset.pair && first.dataset.kind!==second.dataset.kind){ locked=true; showMethodCheck(first,second); return; } locked=true; errors++; combo=0; updateHud(); setFeedback('鍊成未成功', '不是同一對，再觀察公式結構。'); mentor('未配對成功！先看公因式、平方差或共同括號。'); window.mismatchTimer=setTimeout(()=>{first.classList.remove('is-flipped');second.classList.remove('is-flipped');openCards=[];locked=false;},1500); }
-    function showMethodCheck(first,second) { pending={first,second,method:first.dataset.method}; const correct=methods.find(item=>item.id===pending.method); els.methodPrompt.textContent=`這一對質塊已正確對應。它最主要服從「${correct.label}」中的哪一項鍊成法則？`; els.methodFeedback.textContent=''; els.methodOptions.replaceChildren(); shuffle(methods).forEach(method=>{const button=document.createElement('button');button.className='soft-button rounded-xl p-3 text-left';button.innerHTML=`<span class="block text-sm font-black text-amber-100">${method.label}</span><span class="mt-1 block text-xs leading-5 text-stone-300">${method.clue}</span>`;button.addEventListener('click',()=>verifyMethod(method));els.methodOptions.append(button);}); openModal(els.methodModal); }
-    function verifyMethod(method) {
-      if(!pending) return;
-      if(method.id!==pending.method){
-        methodErrors++; errors++; combo=0; updateHud();
-        const correctMethod=methods.find(item=>item.id===pending.method);
-        els.methodFeedback.textContent=`尚未正確：這不是「${method.label}」。${correctMethod.clue}`;
-        els.methodFeedback.className='mt-4 min-h-6 text-center text-sm font-bold text-red-300';
-        mentor(`法則驗證尚未通過。${correctMethod.clue} 重新觀察後再作選擇；修正本身就是等價交換。`);
+var ZONES = [
+  {
+    id: 'A', place: '中央市修煉場', label: '中央市・共同因子訓練', topic: '提取公因式',
+    sigil: 'assets/alchemy-sigil-13.png', badgeId: 'central-gcf', badgeName: '中央市共同因子徽章',
+    hint: '先觀察每一項的共同係數與字母因子。',
+    pairs: [
+      { expand: '12x^2y - 18xy^2', factor: '6xy(2x - 3y)', method: 'gcf' },
+      { expand: '-5a^3 + 15a^2', factor: '-5a^2(a - 3)', method: 'gcf' },
+      { expand: '14a^2b^3 + 21a^3b^2', factor: '7a^2b^2(2b + 3a)', method: 'gcf' },
+      { expand: '-4p^2q - 12pq^2', factor: '-4pq(p + 3q)', method: 'gcf' },
+      { expand: '18m^2n - 12mn^2', factor: '6mn(3m - 2n)', method: 'gcf' },
+      { expand: '20x^3y + 15x^2y^2', factor: '5x^2y(4x + 3y)', method: 'gcf' },
+      { expand: '-8r^2s + 20rs^2', factor: '-4rs(2r - 5s)', method: 'gcf' },
+      { expand: '9u^3v^2 - 6u^2v^3', factor: '3u^2v^2(3u - 2v)', method: 'gcf' }
+    ]
+  },
+  {
+    id: 'B', place: '北方要塞布里茲', label: '布里茲・恆等式訓練', topic: '恆等式：平方差、完全平方',
+    sigil: 'assets/alchemy-sigil-14.png', badgeId: 'briggs-identity', badgeName: '布里茲恆等式徽章',
+    hint: '觀察是否為平方差的共軛結構，或首末項是否皆為完全平方。',
+    pairs: [
+      { expand: '16m^2 - 25n^2', factor: '(4m - 5n)(4m + 5n)', method: 'difference' },
+      { expand: '9x^2 - 24xy + 16y^2', factor: '(3x - 4y)^2', method: 'perfect' },
+      { expand: '49x^2 - 81y^2', factor: '(7x - 9y)(7x + 9y)', method: 'difference' },
+      { expand: '25a^2 + 60ab + 36b^2', factor: '(5a + 6b)^2', method: 'perfect' },
+      { expand: 'x^2 - 14x + 49', factor: '(x - 7)^2', method: 'perfect' },
+      { expand: '36p^2 - q^2', factor: '(6p - q)(6p + q)', method: 'difference' },
+      { expand: '4r^2 + 20rs + 25s^2', factor: '(2r + 5s)^2', method: 'perfect' },
+      { expand: '81u^2 - 16v^2', factor: '(9u - 4v)(9u + 4v)', method: 'difference' }
+    ]
+  },
+  {
+    id: 'C', place: '達普里斯地下室', label: '達普里斯・分組訓練', topic: '分組法、二項式公因式',
+    sigil: 'assets/alchemy-sigil-15.png', badgeId: 'dublith-grouping', badgeName: '達普里斯分組徽章',
+    hint: '嘗試把四項分成兩組，找出各組的公因式，再找共同的二項式因子。',
+    pairs: [
+      { expand: 'ax - bx - ay + by', factor: '(a-b)(x-y)', method: 'group' },
+      { expand: '2pa + 2pb - qa - qb', factor: '(a+b)(2p-q)', method: 'group' },
+      { expand: 'x(x-2) - 3(x-2)', factor: '(x-2)(x-3)', method: 'binomial' },
+      { expand: 'cx - dx + cy - dy', factor: '(c-d)(x+y)', method: 'group' },
+      { expand: '3am - 3an - 2bm + 2bn', factor: '(3a-2b)(m-n)', method: 'group' },
+      { expand: 'y(2y+1) + 4(2y+1)', factor: '(2y+1)(y+4)', method: 'binomial' },
+      { expand: '5x(a+b) - 2(a+b)', factor: '(a+b)(5x-2)', method: 'binomial' },
+      { expand: 'mn + mp - qn - qp', factor: '(m-q)(n+p)', method: 'group' }
+    ]
+  },
+  {
+    id: 'D', place: '真理之門考場', label: '真理之門・綜合考核', topic: '混合題：多步驟、負號、高次式',
+    sigil: 'assets/alchemy-sigil-16.png', badgeId: 'gate-of-truth', badgeName: '真理之門綜合徽章',
+    hint: '先提取公因式，再檢查括號內是否能用平方差繼續分解。',
+    pairs: [
+      { expand: '3x^2 - 27', factor: '3(x-3)(x+3)', method: 'gcf-difference' },
+      { expand: '2m^3 - 32m', factor: '2m(m-4)(m+4)', method: 'gcf-difference' },
+      { expand: '6x^3 - 54x', factor: '6x(x-3)(x+3)', method: 'gcf-difference' },
+      { expand: '-4a^3 + 36a', factor: '-4a(a-3)(a+3)', method: 'gcf-difference' },
+      { expand: '5p^2q - 45q', factor: '5q(p-3)(p+3)', method: 'gcf-difference' },
+      { expand: '8r^3s - 2rs', factor: '2rs(2r-1)(2r+1)', method: 'gcf-difference' },
+      { expand: '12x^2y - 75y', factor: '3y(2x-5)(2x+5)', method: 'gcf-difference' },
+      { expand: '9a^3 - 144a', factor: '9a(a-4)(a+4)', method: 'gcf-difference' }
+    ]
+  }
+];
+function zoneById(id) { return ZONES.filter(function (z) { return z.id === id; })[0]; }
+
+var ACHIEVEMENTS = [
+  { id: 'iron-will', name: '鋼之意志', icon: '🦾', desc: '零錯配完成一局', exp: 80 },
+  { id: 'lightning', name: '神速鍊成', icon: '⚡', desc: '90 秒內完成一局', exp: 80 },
+  { id: 'equivalent', name: '等價交換', icon: '⚖️', desc: '錯配至少 2 次後仍完成', exp: 80 },
+  { id: 'truth-seeker', name: '真理窺探者', icon: '門', desc: '所有方法驗證一次正確', exp: 100 }
+];
+
+/* =====================================================================
+   STORAGE
+   ===================================================================== */
+var LS_STUDENTS = 'alchemy_students_v1';
+var LS_MASTER = 'alchemy_leaderboard_master_v1';
+var LS_BREAKTHROUGH = 'alchemy_leaderboard_breakthrough_v1';
+
+function loadJSON(key, fallback) {
+  try {
+    var raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+function saveJSON(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
+}
+function studentKey(className, studentId) { return className + '\u0000' + studentId; }
+
+function getStudents() { return loadJSON(LS_STUDENTS, {}); }
+function saveStudents(obj) { saveJSON(LS_STUDENTS, obj); }
+function getOrCreateStudent(name, className, studentId) {
+  var students = getStudents();
+  var key = studentKey(className, studentId);
+  if (!students[key]) {
+    students[key] = { name: name, className: className, studentId: studentId, totalExp: 0, badges: [], achievements: [], runs: [] };
+  } else {
+    students[key].name = name; // keep name fresh
+  }
+  saveStudents(students);
+  return students[key];
+}
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+var state = {
+  student: null,
+  zone: null,
+  cards: [],
+  flipped: [],
+  matchedCount: 0,
+  totalPairs: 6,
+  combo: 0,
+  runExp: 0,
+  flips: 0,
+  mistakes: 0,
+  methodFirstTryAllCorrect: true,
+  timerStart: null,
+  timerInterval: null,
+  elapsedSec: 0,
+  pendingPair: null,
+  pendingMethodTried: false,
+  locked: false,
+  finished: false
+};
+
+/* =====================================================================
+   UTIL
+   ===================================================================== */
+function $(id) { return document.getElementById(id); }
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+function fmtTime(sec) { return pad2(Math.floor(sec / 60)) + ':' + pad2(sec % 60); }
+function typeset(el) {
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([el]).catch(function () {});
+  }
+}
+function showToast(title, text, ms) {
+  var stack = $('toastStack');
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<strong>' + title + '</strong>' + text;
+  stack.appendChild(el);
+  setTimeout(function () { el.remove(); }, ms || 4200);
+}
+function setMentor(text) {
+  $('mentorText').textContent = text;
+}
+function openModal(id) { $(id).classList.add('is-open'); }
+function closeModal(id) { $(id).classList.remove('is-open'); }
+
+/* image fallback: on error, swap the <img> for a CSS/SVG-drawn fallback node */
+function wireAssetFallback(root) {
+  var imgs = root.querySelectorAll('img.asset-img');
+  imgs.forEach(function (img) {
+    img.addEventListener('error', function onerr() {
+      img.removeEventListener('error', onerr);
+      img.classList.add('asset-broken');
+      var src = img.getAttribute('src') || '';
+      if (src.indexOf('atlas') !== -1) {
+        var wrap = document.createElement('div');
+        wrap.className = 'map-fallback-svg';
+        wrap.innerHTML = buildMapAtlasSVG();
+        img.parentNode.insertBefore(wrap, img);
         return;
       }
-      const {first,second}=pending;
-      first.classList.remove('is-flipped'); second.classList.remove('is-flipped');
-      first.classList.add('is-matched'); second.classList.add('is-matched');
-      matched++; correctMethods++; combo++;
-      const skillKey=pending.method==='gcf-difference' ? 'gcf' : pending.method==='binomial' ? 'group' : pending.method;
-      methodCounts[skillKey]=(methodCounts[skillKey]||0)+1;
-      const gain=20*(combo>=3?2:1);
-      totalExp+=gain; localStorage.setItem(STORAGE.exp,String(totalExp));
-      const newlyUnlocked=updateCardAvailability();
-      pending=null; openCards=[]; closeModal(els.methodModal); updateHud();
-      els.grid.closest('section').classList.add('ring-pulse');
-      setTimeout(()=>els.grid.closest('section').classList.remove('ring-pulse'),720);
-      const unlockMessage=newlyUnlocked?` 已開放下一批 ${newlyUnlocked*2} 張卡。`:'';
-      setFeedback('鍊成法則驗證成功',`「${method.label}」成立。取得 ${gain} EXP${combo>=3?'（Combo 能量加倍）':''}。${unlockMessage}`);
-      mentor(`鍊成成功！你以「${method.label}」完成理解、分解與再構成。${unlockMessage||'繼續保持結構觀察。'}`);
-      if(matched===6){ clearInterval(timer); window.setTimeout(finishGame,550); } else { locked=false; }
+      var fallbackClass = img.getAttribute('data-fallback') || guessFallback(img);
+      var div = document.createElement('div');
+      div.className = fallbackClass;
+      img.parentNode.insertBefore(div, img);
+    });
+  });
+}
+function guessFallback(img) {
+  var src = img.getAttribute('src') || '';
+  if (src.indexOf('sigil') !== -1) return 'sigil-fallback';
+  if (src.indexOf('emblem') !== -1) return 'cert-seal-fallback';
+  if (src.indexOf('IMG_0814') !== -1) return 'cert-texture-fallback';
+  return 'scene-fallback';
+}
+
+/* Hand-drawn-style fantasy atlas, used only when assets/alchemy-atlas-reference.png
+   is not present. Pure inline SVG so it stays crisp at any size. viewBox 0 0 1000 750
+   matches the 4:3 aspect ratio of .map-visual. Site coordinates line up with the
+   .spot-a/.spot-b/.spot-c/.spot-d percentage positions in CSS (A center, C upper-left,
+   B upper-right, D lower-right). */
+function buildMapAtlasSVG() {
+  return '' +
+'<svg class="map-fallback-svg" viewBox="0 0 1000 750" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="虛擬修煉地圖">' +
+  '<defs>' +
+    '<radialGradient id="parchGrad" cx="50%" cy="45%" r="75%">' +
+      '<stop offset="0%" stop-color="#f2e6bd"/>' +
+      '<stop offset="55%" stop-color="#e3d19c"/>' +
+      '<stop offset="100%" stop-color="#c3aa72"/>' +
+    '</radialGradient>' +
+    '<filter id="paperGrain" x="-20%" y="-20%" width="140%" height="140%">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" result="noise"/>' +
+      '<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.29  0 0 0 0 0.22  0 0 0 0 0.10  0 0 0 0.06 0"/>' +
+    '</filter>' +
+    '<pattern id="gridLines" width="46" height="46" patternUnits="userSpaceOnUse">' +
+      '<path d="M46 0 L0 0 0 46" fill="none" stroke="#8a6a34" stroke-width="1" opacity="0.12"/>' +
+    '</pattern>' +
+    '<linearGradient id="riverGrad" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0%" stop-color="#8fb9c9"/>' +
+      '<stop offset="100%" stop-color="#5f8ea3"/>' +
+    '</linearGradient>' +
+    '<radialGradient id="mtnGrad" cx="40%" cy="20%" r="90%">' +
+      '<stop offset="0%" stop-color="#a08c68"/>' +
+      '<stop offset="100%" stop-color="#5c4c34"/>' +
+    '</radialGradient>' +
+  '</defs>' +
+
+  '<rect x="0" y="0" width="1000" height="750" fill="url(#parchGrad)"/>' +
+  '<rect x="0" y="0" width="1000" height="750" fill="url(#gridLines)"/>' +
+  '<rect x="0" y="0" width="1000" height="750" filter="url(#paperGrain)"/>' +
+  '<rect x="0" y="0" width="1000" height="750" fill="none" stroke="#4a3a1c" stroke-width="10" opacity="0.55"/>' +
+
+  /* -------- river (top-right corner flowing down past B and D) -------- */
+  '<path d="M 980 40 C 880 90, 860 160, 800 230 C 740 300, 830 340, 790 430 C 760 500, 700 540, 720 620 C 735 675, 700 710, 640 735" ' +
+    'fill="none" stroke="#3f6b7d" stroke-width="20" stroke-linecap="round" opacity="0.35"/>' +
+  '<path d="M 980 40 C 880 90, 860 160, 800 230 C 740 300, 830 340, 790 430 C 760 500, 700 540, 720 620 C 735 675, 700 710, 640 735" ' +
+    'fill="none" stroke="url(#riverGrad)" stroke-width="13" stroke-linecap="round"/>' +
+
+  /* -------- mountains, upper-left near site C -------- */
+  '<g fill="url(#mtnGrad)" stroke="#3a2f1c" stroke-width="2" stroke-linejoin="round">' +
+    '<polygon points="70,293 130,158 185,293"/>' +
+    '<polygon points="150,303 210,188 270,303"/>' +
+    '<polygon points="230,293 285,178 345,293"/>' +
+    '<polygon points="40,308 90,228 140,308"/>' +
+  '</g>' +
+  '<g fill="#efe6cf" opacity="0.85">' +
+    '<polygon points="130,158 145,188 115,188"/>' +
+    '<polygon points="210,188 224,215 196,215"/>' +
+    '<polygon points="285,178 299,206 271,206"/>' +
+  '</g>' +
+
+  /* -------- forest texture (scattered tree clumps) -------- */
+  '<g fill="#5c7a44" opacity="0.75">' +
+    '<circle cx="95" cy="420" r="14"/><circle cx="118" cy="435" r="11"/><circle cx="75" cy="440" r="10"/>' +
+    '<circle cx="150" cy="470" r="13"/><circle cx="172" cy="455" r="10"/><circle cx="130" cy="500" r="12"/>' +
+    '<circle cx="200" cy="520" r="14"/><circle cx="225" cy="540" r="11"/><circle cx="180" cy="560" r="12"/>' +
+    '<circle cx="260" cy="580" r="13"/><circle cx="290" cy="600" r="11"/><circle cx="240" cy="620" r="10"/>' +
+    '<circle cx="330" cy="470" r="12"/><circle cx="355" cy="490" r="10"/><circle cx="310" cy="510" r="11"/>' +
+    '<circle cx="560" cy="500" r="12"/><circle cx="585" cy="520" r="10"/><circle cx="540" cy="530" r="11"/>' +
+    '<circle cx="610" cy="470" r="13"/><circle cx="635" cy="450" r="10"/>' +
+    '<circle cx="90" cy="330" r="11"/><circle cx="115" cy="350" r="10"/>' +
+    '<circle cx="430" cy="620" r="12"/><circle cx="455" cy="640" r="10"/><circle cx="405" cy="650" r="11"/>' +
+  '</g>' +
+  '<g fill="#719255" opacity="0.65">' +
+    '<circle cx="100" cy="415" r="8"/><circle cx="155" cy="465" r="8"/><circle cx="205" cy="515" r="8"/>' +
+    '<circle cx="265" cy="575" r="8"/><circle cx="335" cy="465" r="8"/><circle cx="565" cy="495" r="8"/>' +
+    '<circle cx="615" cy="465" r="8"/><circle cx="435" cy="615" r="8"/>' +
+  '</g>' +
+
+  /* -------- roads (dashed, radiating from central hub A) -------- */
+  '<g fill="none" stroke="#7a5a2c" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round" opacity="0.85">' +
+    '<path d="M 500 412 C 400 350, 300 280, 210 233"/>' +
+    '<path d="M 500 412 C 600 350, 700 280, 775 233"/>' +
+    '<path d="M 500 412 C 600 480, 700 550, 755 590"/>' +
+    '<path d="M 500 412 C 400 480, 300 560, 210 620"/>' +
+  '</g>' +
+
+  /* -------- central citadel (site A) -------- */
+  '<g transform="translate(500,412)">' +
+    '<circle r="58" fill="none" stroke="#5a4522" stroke-width="4" opacity="0.7"/>' +
+    '<circle r="42" fill="#d8c68f" stroke="#4a3a1c" stroke-width="3"/>' +
+    '<rect x="-10" y="-46" width="20" height="34" fill="#8f7a52" stroke="#4a3a1c" stroke-width="2"/>' +
+    '<polygon points="-14,-46 0,-64 14,-46" fill="#6d5a34" stroke="#4a3a1c" stroke-width="2"/>' +
+    '<rect x="-26" y="-18" width="14" height="24" fill="#a2895c" stroke="#4a3a1c" stroke-width="1.5"/>' +
+    '<rect x="12" y="-18" width="14" height="24" fill="#a2895c" stroke="#4a3a1c" stroke-width="1.5"/>' +
+  '</g>' +
+
+  /* -------- outpost B: cliffside fortress -------- */
+  '<g transform="translate(780,218)">' +
+    '<polygon points="-40,30 0,-25 40,30" fill="#7d6a4a" stroke="#3a2f1c" stroke-width="2"/>' +
+    '<rect x="-16" y="-10" width="32" height="30" fill="#9c886053" stroke="#3a2f1c" stroke-width="2"/>' +
+    '<rect x="-20" y="-24" width="8" height="16" fill="#6d5a34" stroke="#3a2f1c" stroke-width="1.5"/>' +
+    '<rect x="-4" y="-30" width="8" height="22" fill="#6d5a34" stroke="#3a2f1c" stroke-width="1.5"/>' +
+    '<rect x="12" y="-24" width="8" height="16" fill="#6d5a34" stroke="#3a2f1c" stroke-width="1.5"/>' +
+  '</g>' +
+
+  /* -------- outpost C: ruined gate / underground entrance -------- */
+  '<g transform="translate(200,218)">' +
+    '<path d="M -32,26 L -32,-6 A 32,30 0 0 1 32,-6 L 32,26" fill="#8a7a5c" stroke="#3a2f1c" stroke-width="3"/>' +
+    '<path d="M -18,26 L -18,-2 A 18,18 0 0 1 18,-2 L 18,26" fill="#241f18"/>' +
+  '</g>' +
+
+  /* -------- outpost D: gate of truth arch -------- */
+  '<g transform="translate(760,585)">' +
+    '<rect x="-34" y="-6" width="14" height="38" fill="#7d6a4a" stroke="#3a2f1c" stroke-width="2"/>' +
+    '<rect x="20" y="-6" width="14" height="38" fill="#7d6a4a" stroke="#3a2f1c" stroke-width="2"/>' +
+    '<rect x="-34" y="-18" width="68" height="14" fill="#7d6a4a" stroke="#3a2f1c" stroke-width="2"/>' +
+    '<polygon points="0,-38 -12,-18 12,-18" fill="#c79a45" stroke="#3a2f1c" stroke-width="1.5"/>' +
+  '</g>' +
+
+  /* -------- compass rose, top-right -------- */
+  '<g transform="translate(910,95)">' +
+    '<circle r="48" fill="none" stroke="#7a5a2c" stroke-width="2" opacity="0.8"/>' +
+    '<circle r="34" fill="none" stroke="#7a5a2c" stroke-width="1.5" opacity="0.6"/>' +
+    '<polygon points="0,-40 8,0 0,40 -8,0" fill="#b98f3d" opacity="0.9"/>' +
+    '<polygon points="-40,0 0,-8 40,0 0,8" fill="#8c6a2c" opacity="0.75"/>' +
+    '<text x="0" y="-52" text-anchor="middle" font-family="Cinzel, serif" font-size="15" fill="#4a3a1c">N</text>' +
+    '<text x="0" y="62" text-anchor="middle" font-family="Cinzel, serif" font-size="13" fill="#4a3a1c">S</text>' +
+    '<text x="-58" y="5" text-anchor="middle" font-family="Cinzel, serif" font-size="13" fill="#4a3a1c">W</text>' +
+    '<text x="58" y="5" text-anchor="middle" font-family="Cinzel, serif" font-size="13" fill="#4a3a1c">E</text>' +
+  '</g>' +
+
+  /* -------- title block, top-left -------- */
+  '<text x="34" y="46" font-family="Cinzel, serif" font-size="26" letter-spacing="3" fill="#3a2f1c">VIRTUAL ALCHEMY ATLAS</text>' +
+  '<text x="34" y="72" font-family="Noto Serif TC, serif" font-size="18" fill="#3a2f1c">點選修煉地圖</text>' +
+
+  /* -------- scale bar, bottom-left -------- */
+  '<g transform="translate(40,700)" stroke="#4a3a1c" stroke-width="2" fill="none">' +
+    '<line x1="0" y1="0" x2="150" y2="0"/>' +
+    '<line x1="0" y1="-6" x2="0" y2="6"/>' +
+    '<line x1="50" y1="-6" x2="50" y2="6"/>' +
+    '<line x1="100" y1="-6" x2="100" y2="6"/>' +
+    '<line x1="150" y1="-6" x2="150" y2="6"/>' +
+  '</g>' +
+  '<g font-family="Noto Serif TC, serif" font-size="12" fill="#4a3a1c">' +
+    '<text x="34" y="722">0</text><text x="80" y="722">10</text><text x="130" y="722">20</text><text x="180" y="722">30 km</text>' +
+  '</g>' +
+
+  /* -------- caption ribbon, bottom -------- */
+  '<g transform="translate(230,690)">' +
+    '<rect x="0" y="-24" width="330" height="48" rx="8" fill="rgba(20,18,14,0.72)" stroke="#8c6a2c" stroke-width="1.5"/>' +
+    '<text x="14" y="-4" font-family="Noto Serif TC, serif" font-size="14" fill="#f4ecd9">以知識為鍊，在虛擬之地，</text>' +
+    '<text x="14" y="16" font-family="Noto Serif TC, serif" font-size="14" fill="#f4ecd9">鍛造更強的自己。</text>' +
+  '</g>' +
+'</svg>';
+}
+
+/* =====================================================================
+   MAP MODAL / ZONE SELECTION
+   ===================================================================== */
+var selectedZoneId = null;
+document.querySelectorAll('.map-spot').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.map-spot').forEach(function (b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedZoneId = btn.getAttribute('data-zone');
+    var z = zoneById(selectedZoneId);
+    $('zoneDetail').innerHTML = '<strong>' + z.place + '</strong>（' + z.label + '）<br>課題：' + z.topic + '　·　地區徽章：' + z.badgeName;
+  });
+});
+
+$('btnStartRun').addEventListener('click', function () {
+  var name = $('inputName').value.trim();
+  var className = $('inputClass').value.trim();
+  var sid = $('inputStudentId').value.trim();
+  var err = $('mapFormError');
+  if (!selectedZoneId) { err.textContent = '請先在地圖上選擇修煉地。'; return; }
+  if (!name || !className || !sid) { err.textContent = '請完整填寫姓名、班別與學號。'; return; }
+  err.textContent = '';
+  state.student = getOrCreateStudent(name, className, sid);
+  startRun(selectedZoneId);
+  closeModal('mapModal');
+});
+
+$('btnOpenMap').addEventListener('click', function () {
+  openModal('mapModal');
+});
+$('btnOpenIntro').addEventListener('click', function () {
+  openModal('introModal');
+});
+$('btnIntroContinue').addEventListener('click', function () {
+  closeModal('introModal');
+  openModal('mapModal');
+});
+$('btnBackToMap').addEventListener('click', function () {
+  closeModal('reportModal');
+  openModal('mapModal');
+});
+$('btnRestart').addEventListener('click', function () {
+  if (state.zone) { startRun(state.zone.id); }
+  else { openModal('mapModal'); }
+});
+document.querySelectorAll('[data-close]').forEach(function (btn) {
+  btn.addEventListener('click', function () { closeModal(btn.getAttribute('data-close')); });
+});
+document.querySelectorAll('.leader-tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.leader-tab').forEach(function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    var which = tab.getAttribute('data-tab');
+    $('leaderMaster').style.display = which === 'master' ? '' : 'none';
+    $('leaderBreakthrough').style.display = which === 'breakthrough' ? '' : 'none';
+  });
+});
+
+/* =====================================================================
+   MENTOR WIDGET
+   ===================================================================== */
+$('mentorToggle').addEventListener('click', function () {
+  $('mentorWidget').classList.toggle('is-open');
+});
+
+/* =====================================================================
+   RUN SETUP
+   ===================================================================== */
+function startRun(zoneId) {
+  var zone = zoneById(zoneId);
+  state.zone = zone;
+  state.matchedCount = 0;
+  state.combo = 0;
+  state.runExp = 0;
+  state.flips = 0;
+  state.mistakes = 0;
+  state.methodFirstTryAllCorrect = true;
+  state.flipped = [];
+  state.finished = false;
+  state.locked = false;
+  state.pendingPair = null;
+  state.categoryProgress = { gcf: { done: 0, total: 0 }, difference: { done: 0, total: 0 }, perfect: { done: 0, total: 0 }, group: { done: 0, total: 0 } };
+
+  var chosenPairs = shuffle(zone.pairs).slice(0, 6);
+  var cards = [];
+  chosenPairs.forEach(function (p, idx) {
+    var pairId = zone.id + '-' + idx;
+    var catKey = mapMethodToCategory(p.method);
+    state.categoryProgress[catKey].total += 1;
+    cards.push({ id: pairId + '-e', pairId: pairId, kind: 'expand', text: p.expand, method: p.method, hint: zone.hint, category: catKey });
+    cards.push({ id: pairId + '-f', pairId: pairId, kind: 'factor', text: p.factor, method: p.method, hint: zone.hint, category: catKey });
+  });
+  cards = shuffle(cards);
+  // first 8 cards open (indices 0-7 -> pairs among first 4 unique pairIds encountered), last 4 locked
+  var seenPairs = [];
+  cards.forEach(function (c) {
+    if (seenPairs.indexOf(c.pairId) === -1) seenPairs.push(c.pairId);
+  });
+  var openPairIds = seenPairs.slice(0, 4);
+  cards.forEach(function (c) {
+    c.locked = openPairIds.indexOf(c.pairId) === -1;
+    c.matched = false;
+    c.flipped = false;
+  });
+  state.cards = cards;
+  state.pairsTotal = chosenPairs.length;
+
+  $('boardZoneName').textContent = zone.place;
+  $('zoneLine').textContent = '◌ ' + zone.label + ' · ' + state.pairsTotal + ' 對';
+  $('waveTag').textContent = '第一波 · 8 張卡';
+  $('studentLine').innerHTML = '鍊金術師：<strong>' + state.student.name + '</strong> · 班別 <strong>' + state.student.className + '</strong> · 編號 <strong>' + state.student.studentId + '</strong> · 階級：<strong id="studentRank">' + rankForExp(state.student.totalExp) + '</strong>';
+  $('statRankName').textContent = rankForExp(state.student.totalExp);
+
+  renderBoard();
+  updateStatusPanel();
+  setMentor('鍊成開始！在 8 張卡之中找出前 4 對，完成 2 對驗證後即可開放最後 4 張。');
+
+  clearInterval(state.timerInterval);
+  state.elapsedSec = 0;
+  state.timerStart = Date.now();
+  $('statTimer').textContent = '00:00';
+  state.timerInterval = setInterval(function () {
+    state.elapsedSec = Math.floor((Date.now() - state.timerStart) / 1000);
+    $('statTimer').textContent = fmtTime(state.elapsedSec);
+  }, 1000);
+}
+
+function mapMethodToCategory(method) {
+  if (method === 'gcf' || method === 'gcf-difference') return method === 'gcf' ? 'gcf' : 'gcf';
+  if (method === 'difference') return 'difference';
+  if (method === 'perfect') return 'perfect';
+  if (method === 'group' || method === 'binomial') return 'group';
+  return 'gcf';
+}
+
+/* =====================================================================
+   BOARD RENDER
+   ===================================================================== */
+function renderBoard() {
+  var grid = $('cardGrid');
+  grid.innerHTML = '';
+  state.cards.forEach(function (card) {
+    var scene = document.createElement('div');
+    scene.className = 'card-scene';
+    var el = document.createElement('div');
+    el.className = 'math-card' + (card.locked ? ' is-locked' : '') + (card.flipped ? ' is-flipped' : '') + (card.matched ? ' is-matched' : '');
+    el.setAttribute('data-id', card.id);
+    el.innerHTML =
+      '<div class="card-inner">' +
+        '<div class="card-face card-front">' +
+          (card.locked ? '<span class="lock-icon">🔒</span>' : '') +
+          '<div class="card-sigil-wrap"><img class="asset-img" src="' + state.zone.sigil + '" alt="鍊成陣"></div>' +
+          '<div class="transmute-label">TRANSMUTE</div>' +
+        '</div>' +
+        '<div class="card-face card-back">' +
+          '<span class="card-kind-tag">' + (card.kind === 'expand' ? '質' : '因') + '</span>' +
+          '<div class="card-formula">\\(' + card.text + '\\)</div>' +
+          '<div class="card-check">✓ 鍊成成功</div>' +
+        '</div>' +
+      '</div>';
+    scene.appendChild(el);
+    grid.appendChild(scene);
+    el.addEventListener('click', function () { onCardClick(card.id); });
+  });
+  wireAssetFallback(grid);
+  typeset(grid);
+}
+
+function cardEl(id) { return document.querySelector('.math-card[data-id="' + id + '"]'); }
+function findCard(id) { return state.cards.filter(function (c) { return c.id === id; })[0]; }
+
+function onCardClick(id) {
+  if (state.locked || state.finished) return;
+  var card = findCard(id);
+  if (!card || card.locked || card.matched || card.flipped) return;
+  if (state.flipped.length >= 2) return;
+
+  card.flipped = true;
+  cardEl(id).classList.add('is-flipped');
+  typeset(cardEl(id));
+  state.flips += 1;
+  $('statFlips').textContent = state.flips;
+  state.flipped.push(card);
+
+  if (state.flipped.length === 2) {
+    state.locked = true;
+    var a = state.flipped[0], b = state.flipped[1];
+    if (a.pairId === b.pairId && a.id !== b.id) {
+      // match! open method verification
+      setTimeout(function () { openMethodModal(a); }, 380);
+    } else {
+      state.mistakes += 1;
+      state.combo = 0;
+      updateStatusPanel();
+      setMentor('鍊成失敗不代表停止。先找出兩項是否有相同公因式，或觀察是否為平方差的共軛結構。');
+      setTimeout(function () {
+        showToast('鍊成未成功', '不是同一對，再觀察公式結構。', 2200);
+      }, 100);
+      setTimeout(function () {
+        a.flipped = false; b.flipped = false;
+        var ea = cardEl(a.id), eb = cardEl(b.id);
+        if (ea) ea.classList.remove('is-flipped');
+        if (eb) eb.classList.remove('is-flipped');
+        state.flipped = [];
+        state.locked = false;
+      }, 1500);
     }
-    function badgeUnlock(id) { const badges=getBadges(); if(badges.includes(id)) return false; badges.push(id); save(STORAGE.badges,badges); const item=achievements.find(entry=>entry.id===id); totalExp+=item.reward; localStorage.setItem(STORAGE.exp,String(totalExp));notify(`勳章解鎖：${item.title}`,`${item.description} +${item.reward} EXP`,item.icon); return true; }
-    function awardZoneBadge(zone) { const earned=getZoneBadges(); if(earned.includes(zone.badgeId)) return false; earned.push(zone.badgeId); save(STORAGE.zoneBadges,earned); totalExp+=90; localStorage.setItem(STORAGE.exp,String(totalExp)); notify(`地區徽章解鎖：${zone.badgeName}`,`已完成「${zone.subtitle.replace('鍊成課題：','')}」。+90 EXP`,'⌬'); if(earned.length===zones.length) badgeUnlock('atlas'); return true; }
-    function finishGame() { const gained=160+(combo>=3?40:0); totalExp+=gained; localStorage.setItem(STORAGE.exp,String(totalExp)); const newZoneBadge=awardZoneBadge(selectedZone); if(errors===0) badgeUnlock('will'); if(seconds<=90) badgeUnlock('speed'); if(errors>=2) badgeUnlock('exchange'); if(methodErrors===0) badgeUnlock('truth'); const history=getHistory(); const prior=history.filter(item=>item.profileKey===`${profile.className}\u0000${profile.id}`); const average=prior.length?prior.reduce((sum,item)=>sum+item.seconds,0)/prior.length:null; const improvement=average&&average>0?Math.round((average-seconds)/average*100):0; const result={id:Date.now(),profileKey:`${profile.className}\u0000${profile.id}`,name:profile.name,className:profile.className,studentId:profile.id,zone:selectedZone.id,zoneName:selectedZone.place,bankId:activeBank.id,bankLabel:activeBank.label,zoneBadge:activeBank.badgeName,newZoneBadge,seconds,moves,errors,methodErrors,correctMethods,combo,exp:gained,improvement,skills:{...methodCounts},completedAt:Date.now()}; history.push(result); save(STORAGE.history,history); pushCloudRecord(result); updateHud(); renderLeaderboard(); showReport(result); }
-    function computeSkills(result) { const base={gcf:45,difference:45,perfect:45,group:45}; Object.keys(base).forEach(key=>{base[key]=Math.min(100,base[key]+(result.skills[key]||0)*18+(result.methodErrors===0?14:0)-(result.errors>4?10:0));}); return base; }
-    function showReport(result) { const issuedAt=new Date(result.completedAt); const stamp=`${issuedAt.getFullYear()}${String(issuedAt.getMonth()+1).padStart(2,'0')}${String(issuedAt.getDate()).padStart(2,'0')}`; els.reportTime.textContent=timeText(result.seconds);els.reportMoves.textContent=`${result.moves} 次`;els.reportExp.textContent=`+${result.exp} EXP`;els.certificateName.textContent=profile.name;els.certificatePlayer.textContent=`${profile.className} · 學號 ${profile.id} 已通過本次鍊成課題，特此授予資格認證。`;els.certificateCourse.textContent=`考核課題：${result.bankLabel}`;els.certificateZone.textContent=selectedZone.place;els.certificateDate.textContent=`${issuedAt.getFullYear()} 年 ${issuedAt.getMonth()+1} 月 ${issuedAt.getDate()} 日`;els.certificateNumber.textContent=`ALC-${stamp}-${profile.id}-${selectedZone.id}`;els.certificateSigil.src=selectedZone.sigil;els.certificateSigil.alt=`${selectedZone.place}鍊成陣`;const skills=computeSkills(result);els.skillReport.replaceChildren();const labels={gcf:'提取公因式',difference:'平方差',perfect:'完全平方',group:'分組分解'};Object.entries(labels).forEach(([id,label])=>{const block=document.createElement('div');block.className='skill-row rounded-lg border border-[#cbb47e] bg-[#fbf6e9] p-3';block.innerHTML=`<div class="flex items-center justify-between text-sm font-bold"><span>${label}</span><span>${skills[id]}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-[#d7c8aa]"><div class="skill-fill"></div></div>`;els.skillReport.append(block);requestAnimationFrame(()=>block.querySelector('.skill-fill').style.width=`${skills[id]}%`);});els.truthReview.textContent=result.methodErrors===0&&result.errors===0?'你展現了極高的結構拆解天賦，真理之門已為你敞開。每一步鍊成皆精準而堅定。':result.methodErrors===0?'你能準確辨識鍊成法則；縱使質塊曾經錯配，仍以理解修正並完成等價交換。':result.errors>=3?'你將多次失敗化為新的理解。真理之門重視的不是不犯錯，而是願意分解問題並再次構成。':'你的鍊成陣已穩定運轉。下次可嘗試以更少步數，讓結構辨識成為本能。'; openModal(els.reportModal); }
-    function renderBadges() { const earned=getBadges(); const zoneEarned=getZoneBadges(); els.badgeCollectionProgress.textContent=`地區徽章：${zoneEarned.length} / ${zones.length}${zoneEarned.length===zones.length?' · 全地圖鍊成完成！':' · 集齊四枚即可完成修煉。'}`; els.zoneBadgeGrid.replaceChildren(); zones.forEach(zone=>{const card=document.createElement('article');const complete=zoneEarned.includes(zone.badgeId);card.className=`zone-badge ${complete?'is-earned':''}`;card.innerHTML=`<img src="${zone.sigil}" alt="${zone.place}鍊成陣" /><p class="font-black leading-4">${zone.id}</p><p class="mt-1 leading-4">${complete?zone.badgeName:zone.subtitle.replace('鍊成課題：','')}</p>`;els.zoneBadgeGrid.append(card);}); els.badgeGrid.replaceChildren();achievements.forEach(item=>{const card=document.createElement('article');card.className=`badge-card rounded-xl p-4 ${earned.includes(item.id)?'is-earned':''}`;card.innerHTML=`<div class="flex gap-3"><span class="seal !h-11 !w-11 shrink-0 text-base">${earned.includes(item.id)?item.icon:'?'}</span><div><h3 class="font-black text-[#f3e2b9]">${item.title}</h3><p class="mt-1 text-xs leading-5 text-stone-300">${item.description}</p><p class="mt-2 text-xs font-bold ${earned.includes(item.id)?'text-amber-300':'text-stone-500'}">${earned.includes(item.id)?`已解鎖 · +${item.reward} EXP`:`未解鎖 · +${item.reward} EXP`}</p></div></div>`;els.badgeGrid.append(card);}); }
-    function renderLeaderboard() {
-      els.leaderboardRows.innerHTML = '<p class="rounded-lg border border-dashed border-amber-100/20 p-4 text-center text-xs leading-5 text-stone-400">正在載入龍虎榜…</p>';
-      fetchCloudHistory().then(history => {
-        let ranked = [];
-        if (activeLeaderboard === 'elite') {
-          ranked = [...history].sort((a,b) => a.seconds - b.seconds || a.moves - b.moves).slice(0,5);
-          els.leaderboardCaption.textContent = '首席龍虎榜：最快通關；時間相同時以較少翻牌次數優先。';
-        } else {
-          const byStudent = new Map();
-          history.forEach(item => {
-            const current = byStudent.get(item.profileKey);
-            if (!current || item.improvement > current.improvement) byStudent.set(item.profileKey, item);
-          });
-          ranked = [...byStudent.values()].filter(item => item.improvement > 0).sort((a,b) => b.improvement - a.improvement || a.seconds - b.seconds).slice(0,5);
-          els.leaderboardCaption.textContent = '突破龍虎榜：以本次時間與過往平均時間比較，顯示進步幅度。';
-        }
-        els.leaderboardRows.replaceChildren();
-        if (!ranked.length) {
-          els.leaderboardRows.innerHTML = '<p class="rounded-lg border border-dashed border-amber-100/20 p-4 text-center text-xs leading-5 text-stone-400">尚未有鍊成紀錄。完成一次考核後，名字將刻入國家鍊金術師檔案。</p>';
-          return;
-        }
-        ranked.forEach((item, index) => {
-          const row = document.createElement('div');
-          row.className = 'flex items-center gap-3 rounded-lg border border-amber-100/15 bg-black/20 p-3';
-          row.innerHTML = `<span class="grid h-7 w-7 place-items-center rounded-full border border-amber-200/35 text-xs font-black text-amber-200">${index+1}</span><div class="min-w-0 flex-1"><p class="truncate text-sm font-black text-[#f2e3bf]">${item.name}</p><p class="truncate text-[.68rem] text-stone-400">${item.className} · ${item.zoneName} · ${item.bankId ? `卷軸 ${item.bankId}` : '歷史紀錄'}</p></div><div class="text-right"><p class="text-xs font-black text-amber-200">${activeLeaderboard==='elite'?timeText(item.seconds):`+${item.improvement}%`}</p><p class="text-[.65rem] text-stone-500">${activeLeaderboard==='elite'?`${item.moves} 次翻牌`:'突破幅度'}</p></div>`;
-          els.leaderboardRows.append(row);
-        });
-      });
+  }
+}
+
+/* =====================================================================
+   METHOD VERIFICATION
+   ===================================================================== */
+function openMethodModal(card) {
+  state.pendingPair = card;
+  state.pendingMethodTried = false;
+  var partner = state.cards.filter(function (c) { return c.pairId === card.pairId && c.id !== card.id; })[0];
+
+  $('methodPairPreview').innerHTML =
+    '<div>\\(' + card.text + '\\)</div><div style="font-size:1.3rem;color:#6d4f1e;">⇌</div><div>\\(' + partner.text + '\\)</div>';
+  typeset($('methodPairPreview'));
+
+  var opts = shuffle(METHODS);
+  var optsWrap = $('methodOptions');
+  optsWrap.innerHTML = '';
+  opts.forEach(function (m) {
+    var b = document.createElement('button');
+    b.className = 'method-btn';
+    b.textContent = m.label;
+    b.setAttribute('data-method', m.id);
+    b.addEventListener('click', function () { onMethodChoice(m.id, b); });
+    optsWrap.appendChild(b);
+  });
+  $('methodFeedback').textContent = '';
+  openModal('methodModal');
+}
+
+function onMethodChoice(chosenId, btnEl) {
+  var card = state.pendingPair;
+  if (!card) return;
+  var correct = chosenId === card.method;
+  if (correct) {
+    btnEl.classList.add('correct');
+    setTimeout(function () { resolveMatch(card, !state.pendingMethodTried); }, 420);
+  } else {
+    btnEl.classList.add('wrong');
+    state.pendingMethodTried = true;
+    state.methodFirstTryAllCorrect = false;
+    $('methodFeedback').textContent = '尚未成功，再想想：' + card.hint;
+  }
+}
+
+function resolveMatch(card, firstTryCorrect) {
+  closeModal('methodModal');
+  var partner = state.cards.filter(function (c) { return c.pairId === card.pairId && c.id !== card.id; })[0];
+  [card, partner].forEach(function (c) {
+    c.matched = true;
+    var el = cardEl(c.id);
+    if (el) el.classList.add('is-matched');
+  });
+  state.matchedCount += 1;
+  state.categoryProgress[card.category].done += 1;
+
+  if (firstTryCorrect) { state.combo += 1; } else { state.combo = 0; }
+  var multiplier = state.combo >= 3 ? 2 : 1;
+  var gained = 20 * multiplier;
+  state.runExp += gained;
+  state.student.totalExp += gained;
+  saveStudents(getStudents_withUpdate());
+
+  showToast('鍊成成功！', '+' + gained + ' EXP · ' + methodLabel(card.method) + (multiplier > 1 ? '（Combo 雙倍）' : ''), 2600);
+  setMentor('鍊成成功，等價交換完成。繼續尋找下一組對應公式吧。');
+
+  state.flipped = [];
+  state.locked = false;
+
+  // unlock last 4 after 2 pairs matched
+  if (state.matchedCount === 2) {
+    unlockRemaining();
+  }
+
+  updateStatusPanel();
+
+  if (state.matchedCount >= state.pairsTotal) {
+    finishRun();
+  }
+}
+
+function getStudents_withUpdate() {
+  var students = getStudents();
+  var key = studentKey(state.student.className, state.student.studentId);
+  students[key] = state.student;
+  return students;
+}
+
+function unlockRemaining() {
+  state.cards.forEach(function (c) {
+    if (c.locked) {
+      c.locked = false;
+      var el = cardEl(c.id);
+      if (el) el.classList.remove('is-locked');
     }
-    function openMap() { els.playerName.value=profile.name||'';els.playerClass.value=profile.className||'';els.playerId.value=profile.id||'';els.mapError.classList.add('hidden');renderMap();openModal(els.mapModal); }
-    els.mapButton.addEventListener('click',openMap);els.mapClose.addEventListener('click',()=>closeModal(els.mapModal));els.beginButton.addEventListener('click',()=>{const name=els.playerName.value.trim(),className=els.playerClass.value.trim(),id=els.playerId.value.trim();if(!name||!className||!id){els.mapError.textContent='請完整填寫姓名、班別與編號後，才可啟動鍊成陣。';els.mapError.classList.remove('hidden');return;}profile={name,className,id};save(STORAGE.profile,profile);startGame();});els.resetButton.addEventListener('click',()=>{if(!profile.name)openMap();else startGame();});els.badgeButton.addEventListener('click',()=>{renderBadges();openModal(els.badgeModal);});els.badgeClose.addEventListener('click',()=>closeModal(els.badgeModal));els.mentorToggle.addEventListener('click',()=>els.mentor.classList.toggle('is-collapsed'));els.mentorClose.addEventListener('click',()=>els.mentor.classList.add('is-collapsed'));els.eliteTab.addEventListener('click',()=>{activeLeaderboard='elite';els.eliteTab.className='rounded-md bg-amber-200 px-2 py-2 text-xs font-extrabold text-stone-900';els.breakTab.className='rounded-md px-2 py-2 text-xs font-extrabold text-stone-300';renderLeaderboard();});els.breakTab.addEventListener('click',()=>{activeLeaderboard='break';els.breakTab.className='rounded-md bg-amber-200 px-2 py-2 text-xs font-extrabold text-stone-900';els.eliteTab.className='rounded-md px-2 py-2 text-xs font-extrabold text-stone-300';renderLeaderboard();});els.reportClose.addEventListener('click',()=>{closeModal(els.reportModal);openMap();});els.printButton.addEventListener('click',()=>window.print());window.addEventListener('resize',()=>requestAnimationFrame(fitFormulas));document.addEventListener('keydown',event=>{if(event.key==='Escape'){[els.methodModal,els.badgeModal,els.reportModal].forEach(closeModal);}});updateHud();updateProfileLine();renderLeaderboard();renderMap();const previewMode=new URLSearchParams(window.location.search).get('demo');if(previewMode==='board'){profile={name:'示範鍊金術師',className:'3A',id:'000'};selectedZone=zones[2];startGame();}else{openMap();}
-  })();
-  </script>
+  });
+  $('waveTag').textContent = '全鍊成陣 · 12 張卡';
+  document.querySelectorAll('.card-front .lock-icon').forEach(function (l) { l.remove(); });
+  showToast('鍊成陣全開', '最後 4 張卡已解鎖！', 2600);
+}
+
+/* =====================================================================
+   STATUS PANEL
+   ===================================================================== */
+function updateStatusPanel() {
+  var pct = Math.round((state.matchedCount / state.pairsTotal) * 100);
+  $('statActivation').textContent = pct;
+  $('statPairsDone').textContent = state.matchedCount;
+  $('activationBar').style.width = pct + '%';
+  $('statExp').textContent = state.student ? state.student.totalExp : 0;
+  $('statRankName').textContent = state.student ? rankForExp(state.student.totalExp) : '鍊金見習生';
+  var rankEl = $('studentRank'); if (rankEl) rankEl.textContent = state.student ? rankForExp(state.student.totalExp) : '鍊金見習生';
+  $('statCombo').textContent = state.combo;
+  $('statComboMult').textContent = '倍率 ×' + (state.combo >= 3 ? 2 : 1);
+  $('statFlips').textContent = state.flips;
+}
+
+/* =====================================================================
+   FINISH RUN / CERTIFICATE / ACHIEVEMENTS / LEADERBOARD
+   ===================================================================== */
+function finishRun() {
+  state.finished = true;
+  clearInterval(state.timerInterval);
+  var timeSec = state.elapsedSec;
+
+  // badge
+  var zone = state.zone;
+  if (state.student.badges.indexOf(zone.badgeId) === -1) {
+    state.student.badges.push(zone.badgeId);
+    showToast('地區徽章', '獲得「' + zone.badgeName + '」！', 3600);
+  }
+
+  // achievements
+  var unlockedNow = [];
+  function unlock(id) {
+    if (state.student.achievements.indexOf(id) === -1) {
+      state.student.achievements.push(id);
+      unlockedNow.push(id);
+      var a = ACHIEVEMENTS.filter(function (x) { return x.id === id; })[0];
+      state.student.totalExp += a.exp;
+    }
+  }
+  if (state.mistakes === 0) unlock('iron-will');
+  if (timeSec <= 90) unlock('lightning');
+  if (state.mistakes >= 2) unlock('equivalent');
+  if (state.methodFirstTryAllCorrect) unlock('truth-seeker');
+
+  unlockedNow.forEach(function (id) {
+    var a = ACHIEVEMENTS.filter(function (x) { return x.id === id; })[0];
+    showToast(a.icon + ' 成就達成', a.name + '（+' + a.exp + ' EXP）', 4000);
+  });
+
+  // history for breakthrough board (average of PRIOR runs before this one)
+  var priorRuns = state.student.runs.slice();
+  var priorAvg = null;
+  if (priorRuns.length > 0) {
+    priorAvg = priorRuns.reduce(function (s, r) { return s + r.timeSec; }, 0) / priorRuns.length;
+  }
+
+  var run = { zoneId: zone.id, timeSec: timeSec, flips: state.flips, dateISO: new Date().toISOString() };
+  state.student.runs.push(run);
+  saveStudents(getStudents_withUpdate());
+
+  // master leaderboard
+  var master = loadJSON(LS_MASTER, []);
+  master.push({
+    name: state.student.name, className: state.student.className, studentId: state.student.studentId,
+    zoneId: zone.id, timeSec: timeSec, flips: state.flips, dateISO: run.dateISO
+  });
+  saveJSON(LS_MASTER, master);
+
+  // breakthrough leaderboard
+  if (priorAvg !== null && priorAvg > 0) {
+    var improvement = (priorAvg - timeSec) / priorAvg;
+    var breakthrough = loadJSON(LS_BREAKTHROUGH, []);
+    breakthrough.push({
+      name: state.student.name, className: state.student.className, studentId: state.student.studentId,
+      zoneId: zone.id, timeSec: timeSec, priorAvg: priorAvg, improvementRate: improvement, dateISO: run.dateISO
+    });
+    saveJSON(LS_BREAKTHROUGH, breakthrough);
+  }
+
+  renderLeaderboards();
+  showCertificate(run, priorAvg);
+}
+
+function showCertificate(run, priorAvg) {
+  var zone = state.zone;
+  var now = new Date();
+  var yyyy = now.getFullYear(), mm = pad2(now.getMonth() + 1), dd = pad2(now.getDate());
+  var code = 'ALC-' + yyyy + mm + dd + '-' + state.student.studentId + '-' + zone.id;
+
+  $('certName').textContent = state.student.name;
+  $('certNameInline').textContent = state.student.name;
+  $('certZone').textContent = zone.place;
+  $('certTime').textContent = fmtTime(run.timeSec);
+  $('certFlips').textContent = run.flips + ' 次';
+  $('certExp').textContent = state.runExp + ' EXP';
+  $('certDate').textContent = yyyy + '-' + mm + '-' + dd;
+  $('certCode').textContent = code;
+
+  var remarkText = '真理之門評語：等價交換，付出與收穫終將對等。';
+  if (priorAvg !== null) {
+    var imp = Math.round(((priorAvg - run.timeSec) / priorAvg) * 100);
+    remarkText = imp > 0
+      ? '真理之門評語：較過往平均進步 ' + imp + '%，等價交換確實發生。'
+      : '真理之門評語：穩紮穩打，繼續磨練將帶來更大的等價回饋。';
+  }
+  $('certRemark').textContent = remarkText;
+
+  var cats = [
+    { key: 'gcf', name: '提取公因式' },
+    { key: 'difference', name: '平方差' },
+    { key: 'perfect', name: '完全平方' },
+    { key: 'group', name: '分組分解' }
+  ];
+  var barsHtml = '';
+  cats.forEach(function (c) {
+    var prog = state.categoryProgress[c.key];
+    var pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+    barsHtml += '<div class="cert-bar-row"><span>' + c.name + '</span><div class="cert-bar-track"><div class="cert-bar-fill" style="width:' + pct + '%;"></div></div></div>';
+  });
+  $('certBars').innerHTML = barsHtml;
+
+  openModal('reportModal');
+}
+
+$('btnPrintCert').addEventListener('click', function () { window.print(); });
+
+/* =====================================================================
+   BADGE / ACHIEVEMENT MODAL
+   ===================================================================== */
+$('btnOpenBadges').addEventListener('click', function () {
+  renderBadgeModal();
+  openModal('badgeModal');
+});
+
+function renderBadgeModal() {
+  var owned = state.student ? state.student.badges : [];
+  var achOwned = state.student ? state.student.achievements : [];
+  var grid = $('badgeGrid');
+  grid.innerHTML = '';
+  ZONES.forEach(function (z) {
+    var has = owned.indexOf(z.badgeId) !== -1;
+    var div = document.createElement('div');
+    div.className = 'badge-item' + (has ? '' : ' locked');
+    div.innerHTML = '<div class="glyph sigil-fallback"></div><div class="name">' + z.badgeName + '</div>';
+    grid.appendChild(div);
+  });
+  var list = $('achList');
+  list.innerHTML = '';
+  ACHIEVEMENTS.forEach(function (a) {
+    var has = achOwned.indexOf(a.id) !== -1;
+    var div = document.createElement('div');
+    div.className = 'ach-item' + (has ? '' : ' locked');
+    div.innerHTML = '<span>' + a.icon + ' ' + a.name + ' — ' + a.desc + '</span><span class="exp-tag">+' + a.exp + ' EXP</span>';
+    list.appendChild(div);
+  });
+  wireAssetFallback(document.getElementById('badgeModal'));
+}
+
+/* =====================================================================
+   LEADERBOARDS
+   ===================================================================== */
+function renderLeaderboards() {
+  var master = loadJSON(LS_MASTER, []).slice();
+  master.sort(function (a, b) {
+    if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+    return a.flips - b.flips;
+  });
+  master = master.slice(0, 5);
+  $('leaderMaster').innerHTML = tableHtml(master, [
+    { h: '名次', r: function (r, i) { return i + 1; } },
+    { h: '鍊金術師', r: function (r) { return r.name + ' (' + r.className + ')'; } },
+    { h: '修煉地', r: function (r) { return zoneById(r.zoneId) ? zoneById(r.zoneId).place : r.zoneId; } },
+    { h: '時間', r: function (r) { return fmtTime(r.timeSec); } },
+    { h: '翻牌', r: function (r) { return r.flips; } }
+  ], '尚未有鍊成紀錄，成為第一位登上龍虎榜的鍊金術師吧！');
+
+  var breakthrough = loadJSON(LS_BREAKTHROUGH, []).slice();
+  breakthrough.sort(function (a, b) { return b.improvementRate - a.improvementRate; });
+  breakthrough = breakthrough.slice(0, 5);
+  $('leaderBreakthrough').innerHTML = tableHtml(breakthrough, [
+    { h: '名次', r: function (r, i) { return i + 1; } },
+    { h: '鍊金術師', r: function (r) { return r.name + ' (' + r.className + ')'; } },
+    { h: '進步率', r: function (r) { return Math.round(r.improvementRate * 100) + '%'; } },
+    { h: '本局時間', r: function (r) { return fmtTime(r.timeSec); } },
+    { h: '歷史平均', r: function (r) { return fmtTime(Math.round(r.priorAvg)); } }
+  ], '尚未有足夠的重複鍊成紀錄，再挑戰一次即可產生突破數據！');
+}
+
+function tableHtml(rows, cols, emptyText) {
+  if (!rows.length) return '<div class="leader-empty">' + emptyText + '</div>';
+  var html = '<table class="leader-table"><thead><tr>';
+  cols.forEach(function (c) { html += '<th>' + c.h + '</th>'; });
+  html += '</tr></thead><tbody>';
+  rows.forEach(function (r, i) {
+    html += '<tr>';
+    cols.forEach(function (c, ci) {
+      var v = c.r(r, i);
+      html += '<td' + (ci === 0 ? ' class="rank-medal"' : '') + '>' + v + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+wireAssetFallback(document);
+renderLeaderboards();
+openModal('introModal');
+
+})();
+</script>
 </body>
 </html>
+
 
